@@ -1637,7 +1637,13 @@ end subroutine atmos_data_type_chksum
       do i=isc,iec
         nb = Atm_block%blkno(i,j)
         ix = Atm_block%ixp(i,j)
+!change land sea mask to: land:0, ocean:1
         lsmask(i,j) = IPD_Data(nb)%SfcProp%slmsk(ix)
+        if( lsmask(i,j) == 0 ) then
+          lsmask(i,j) = 1
+        else if( lsmask(i,j) == 1) then
+          lsmask(i,j) = 0
+        endif
       enddo
     enddo
 !
