@@ -814,13 +814,15 @@ end subroutine atmos_data_type_chksum
               nb = Atm_block%blkno(i,j)
               ix = Atm_block%ixp(i,j)
 !             if (Sfcprop%slimskin(i,j) < 3.1 .and. Sfcprop%slimskin(i,j) > 2.9) then
-!               if (Sfcprop%slmsk(i,j) < 0.1 .or. Sfcprop%slmsk(i,j) > 1.9) then
+!if it is ocean or ice get sst from mediator
+               if (Sfcprop%slmsk(i,j) < 0.1 .or. Sfcprop%slmsk(i,j) > 1.9) then
                   IPD_Data(nb)%Coupling%tseain_cpl(ix) = datar8(i,j)
-!                 IPD_Data(nb)%Sfcprop%tsfc(ix) = datar8(i,j)
-!               endif
+                 IPD_Data(nb)%Sfcprop%tsfc(ix) = datar8(i,j)
+               endif
 !             endif
             enddo
           enddo
+          if( mpp_pe==mpp_root_pe) print *,'get sst from mediator'
         endif
 
         ! get sea ice fraction:  fice or sea ice concentration from the mediator
