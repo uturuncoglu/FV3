@@ -738,7 +738,7 @@ end subroutine atmos_data_type_chksum
     real(kind=ESMF_KIND_R4), dimension(:,:), pointer   :: datar42d
     real(kind=ESMF_KIND_R8), dimension(:,:), pointer   :: datar82d
     real(kind=IPD_kind_phys), dimension(:,:), pointer  :: datar8
-    logical found
+    logical found, lcpl_fice
 !
 !------------------------------------------------------------------------------
 !
@@ -748,6 +748,7 @@ end subroutine atmos_data_type_chksum
     iec = IPD_control%isc+IPD_control%nx-1
     jsc = IPD_control%jsc
     jec = IPD_control%jsc+IPD_control%ny-1
+    lcpl_fice = .false.
 
     allocate(datar8(isc:iec,jsc:jec))
     print *,'in cplImp,dim=',isc,iec,jsc,jec
@@ -828,11 +829,19 @@ end subroutine atmos_data_type_chksum
         ! get sea ice fraction:  fice or sea ice concentration from the mediator
         fldname = 'ice_fraction'
         if (trim(impfield_name) == trim(fldname) .and. found) then
+          lcpl_fice = .true.
           do j=jsc,jec
             do i=isc,iec
               nb = Atm_block%blkno(i,j)
               ix = Atm_block%ixp(i,j)
               IPD_Data(nb)%Coupling%ficein_cpl(ix) = datar8(i,j)
+!if it is ocean or ice get sst from mediator
+              if (IPD_Data(nb)%Sfcprop%slmsk(ix) < 0.1 .or. IPD_Data(nb)%Sfcprop%slmsk(ix) > 1.9) then
+                if( datar8(i,j) > 0.15) then
+                  IPD_Data(nb)%Sfcprop%fice(ix) = datar8(i,j)
+                  IPD_Data(nb)%Sfcprop%slmsk(ix) = 2.0
+                endif
+              endif
             enddo
           enddo
         endif
@@ -923,8 +932,30 @@ end subroutine atmos_data_type_chksum
 
       endif
     enddo
-
+!
     deallocate(datar8)
+
+! update sea ice related fields:
+    do j=jsc,jec
+      do i=isc,iec
+        nb = Atm_block%blkno(i,j)
+        ix = Atm_block%ixp(i,j)
+!if it is ocean or ice get sst from mediator
+        if (IPD_Data(nb)%Sfcprop%slmsk(ix) < 0.1 .or.  IPD_Data(nb)%Sfcprop%slmsk(ix) > 1.9) then
+          if( lcpl_fice ) then
+            if( IPD_Data(nb)%Sfcprop%fice(ix) > 0.15) then
+              IPD_Data(nb)%Sfcprop%tisfc(ix) = IPD_Data(nb)%Coupling%tisfcin_cpl(ix)
+              IPD_Data(nb)%Sfcprop%hice(ix)  = IPD_Data(nb)%Coupling%hicein_cpl(ix)
+              IPD_Data(nb)%Sfcprop%snowd(ix) = IPD_Data(nb)%Coupling%hsnoin_cpl(ix)
+            else
+              IPD_Data(nb)%Sfcprop%hice(ix)  = 0.
+              IPD_Data(nb)%Sfcprop%snowd(ix) = 0.
+            endif
+          endif
+        endif
+      enddo
+    enddo
+
     rc=0
 !
     print *,'end of assign_importdata'
