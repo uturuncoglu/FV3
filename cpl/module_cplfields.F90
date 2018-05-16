@@ -79,6 +79,7 @@ module module_cplfields
 ! Import Fields ----------------------------------------
 !  integer, public, parameter :: NimportFields = 16
   integer, public, parameter :: NimportFields = 11
+  logical, public            :: importFieldsValid(NimportFields)
   type(ESMF_Field), public   :: importFields(NimportFields)
   character(len=40), public, parameter :: importFieldsList(NimportFields) = (/ &
        "land_mask                              ", &
