@@ -784,20 +784,20 @@ end subroutine atmos_data_type_chksum
         endif
 !
         ! get sea land mask: in order to update the coupling fields over the ocean/ice
-        fldname = 'land_mask'
-        findex = QueryFieldList(ImportFieldsList,fldname)
-        if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
-          if (trim(impfield_name) == trim(fldname) .and. found) then
-            do j=jsc,jec
-            do i=isc,iec
-              nb = Atm_block%blkno(i,j)
-              ix = Atm_block%ixp(i,j)
-              IPD_Data(nb)%Coupling%slimskin_cpl(ix) = datar8(i,j)
-            enddo
-            enddo
-            if( mpp_pe()==mpp_root_pe()) print *,'get land mask from mediator'
-          endif
-        endif
+!        fldname = 'land_mask'
+!        findex = QueryFieldList(ImportFieldsList,fldname)
+!        if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
+!          if (trim(impfield_name) == trim(fldname) .and. found) then
+!            do j=jsc,jec
+!            do i=isc,iec
+!              nb = Atm_block%blkno(i,j)
+!              ix = Atm_block%ixp(i,j)
+!              IPD_Data(nb)%Coupling%slimskin_cpl(ix) = datar8(i,j)
+!            enddo
+!            enddo
+!            if( mpp_pe()==mpp_root_pe()) print *,'get land mask from mediator'
+!          endif
+!        endif
 
         ! get surface temperature: update ice temperature for atm ??? can SST be applied here???
         fldname = 'surface_temperature'
@@ -851,14 +851,15 @@ end subroutine atmos_data_type_chksum
               IPD_Data(nb)%Coupling%ficein_cpl(ix) = datar8(i,j)
 !if it is ocean or ice get sst from mediator
               if (IPD_Data(nb)%Sfcprop%slmsk(ix) < 0.1 .or. IPD_Data(nb)%Sfcprop%slmsk(ix) > 1.9) then
-                if( datar8(i,j) > 0.15) then
+                if( datar8(i,j) > 0.15 .and. IPD_Data(nb)%Sfcprop%lakemsk(ix) /= 1 ) then
                   IPD_Data(nb)%Sfcprop%fice(ix) = datar8(i,j)
                   IPD_Data(nb)%Sfcprop%slmsk(ix) = 2.0
+                  IPD_Data(nb)%Coupling%slimskin_cpl(ix) = 4.
                 endif
               endif
             enddo
             enddo
-            if( mpp_pe()==mpp_root_pe()) print *,'get fice from mediator'
+            if( mpp_pe()==mpp_root_pe()) print *,'fv3 assign_import: get fice from mediator'
           endif
         endif
 
@@ -874,7 +875,7 @@ end subroutine atmos_data_type_chksum
               IPD_Data(nb)%Coupling%ulwsfcin_cpl(ix) = datar8(i,j)
             enddo
             enddo
-            if( mpp_pe()==mpp_root_pe()) print *,'get lwflx from mediator'
+            if( mpp_pe()==mpp_root_pe()) print *,'fv3 assign_import: get lwflx from mediator'
           endif
         endif
 
@@ -890,7 +891,7 @@ end subroutine atmos_data_type_chksum
               IPD_Data(nb)%Coupling%dqsfcin_cpl(ix) = datar8(i,j)
             enddo
             enddo
-            if( mpp_pe()==mpp_root_pe()) print *,'get laten_heat from mediator'
+            if( mpp_pe()==mpp_root_pe()) print *,'fv3 assign_import: get laten_heat from mediator'
           endif
         endif
 
@@ -906,7 +907,7 @@ end subroutine atmos_data_type_chksum
               IPD_Data(nb)%Coupling%dtsfcin_cpl(ix) = datar8(i,j)
             enddo
             enddo
-            if( mpp_pe()==mpp_root_pe()) print *,'get sensi_heat from mediator'
+            if( mpp_pe()==mpp_root_pe()) print *,'fv3 assign_import: get sensi_heat from mediator'
           endif
         endif
 
@@ -922,7 +923,7 @@ end subroutine atmos_data_type_chksum
               IPD_Data(nb)%Coupling%dusfcin_cpl(ix) = datar8(i,j)
             enddo
             enddo
-            if( mpp_pe()==mpp_root_pe()) print *,'get zonal_moment_flx from mediator'
+            if( mpp_pe()==mpp_root_pe()) print *,'fv3 assign_import: get zonal_moment_flx from mediator'
           endif
         endif
 
@@ -938,7 +939,7 @@ end subroutine atmos_data_type_chksum
               IPD_Data(nb)%Coupling%dvsfcin_cpl(ix) = datar8(i,j)
             enddo
             enddo
-            if( mpp_pe()==mpp_root_pe()) print *,'get merid_moment_flx from mediator'
+            if( mpp_pe()==mpp_root_pe()) print *,'fv3 assign_import: get merid_moment_flx from mediator'
           endif
         endif
 
@@ -954,7 +955,7 @@ end subroutine atmos_data_type_chksum
               IPD_Data(nb)%Coupling%hicein_cpl(ix) = datar8(i,j)
             enddo
             enddo
-            if( mpp_pe()==mpp_root_pe()) print *,'get ice_volume  from mediator'
+            if( mpp_pe()==mpp_root_pe()) print *,'fv3 assign_import: get ice_volume  from mediator'
           endif
         endif
 
@@ -970,7 +971,7 @@ end subroutine atmos_data_type_chksum
               IPD_Data(nb)%Coupling%hsnoin_cpl(ix) = datar8(i,j)
             enddo
             enddo
-            if( mpp_pe()==mpp_root_pe()) print *,'get snow_volume  from mediator'
+            if( mpp_pe()==mpp_root_pe()) print *,'fv3 assign_import: get snow_volume  from mediator'
           endif
         endif
 
@@ -987,7 +988,7 @@ end subroutine atmos_data_type_chksum
         ix = Atm_block%ixp(i,j)
 !if it is ocean or ice get sst from mediator
         if (IPD_Data(nb)%Sfcprop%slmsk(ix) < 0.1 .or.  IPD_Data(nb)%Sfcprop%slmsk(ix) > 1.9) then
-          if( IPD_Data(nb)%Sfcprop%fice(ix) > 0.15) then
+          if( IPD_Data(nb)%Sfcprop%fice(ix) > 0.15 .and. IPD_Data(nb)%Sfcprop%lakemsk(ix) /= 1 ) then
             IPD_Data(nb)%Sfcprop%tisfc(ix) = IPD_Data(nb)%Coupling%tisfcin_cpl(ix)
             IPD_Data(nb)%Sfcprop%hice(ix)  = IPD_Data(nb)%Coupling%hicein_cpl(ix)
             IPD_Data(nb)%Sfcprop%snowd(ix) = IPD_Data(nb)%Coupling%hsnoin_cpl(ix)
