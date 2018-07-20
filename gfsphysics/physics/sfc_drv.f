@@ -1,3 +1,5 @@
+       module mdul_sfc_drv
+       contains
 !>  \file sfc_drv.f
 !!  This file contains the NOAH land surface scheme.
 !> \defgroup NOAH NOAH Land Surface
@@ -36,7 +38,7 @@
 !  ---  inputs:                                                         !
 !          ( im, km, ps, u1, v1, t1, q1, soiltyp, vegtype, sigmaf,      !
 !            sfcemis, dlwflx, dswsfc, snet, delt, tg3, cm, ch,          !
-!            prsl1, prslki, zf, islimsk, ddvel, slopetyp,               !
+!            prsl1, prslki, zf, idry, ddvel, slopetyp,                  !
 !            shdmin, shdmax, snoalb, sfalb, flag_iter, flag_guess,      !
 !            isot, ivegsrc,                                             !
 !  ---  in/outs:                                                        !
@@ -83,7 +85,7 @@
 !     prsl1    - real, sfc layer 1 mean pressure (pa)              im   !
 !     prslki   - real,                                             im   !
 !     zf       - real, height of bottom layer (m)                  im   !
-!     islimsk  - integer, sea/land/ice mask (=0/1/2)               im   !
+!     idry     - integer, =1 if any land, 0 otherwise              im   !
 !     ddvel    - real,                                             im   !
 !     slopetyp - integer, class of sfc slope (integer index)       im   !
 !     shdmin   - real, min fractional coverage of green veg        im   !
@@ -138,7 +140,7 @@
 !  ---  inputs:
      &     ( im, km, ps, u1, v1, t1, q1, soiltyp, vegtype, sigmaf,      &
      &       sfcemis, dlwflx, dswsfc, snet, delt, tg3, cm, ch,          &
-     &       prsl1, prslki, zf, islimsk, ddvel, slopetyp,               &
+     &       prsl1, prslki, zf, idry, ddvel, slopetyp,                  &
      &       shdmin, shdmax, snoalb, sfalb, flag_iter, flag_guess,      &
      &       isot, ivegsrc,                                             &
      &       bexppert, xlaipert, vegfpert,pertvegf,                     &  ! sfc perts, mgehne
@@ -177,9 +179,14 @@
 
 !  ---  input:
       integer, intent(in) :: im, km, isot, ivegsrc
-      real (kind=kind_phys), dimension(6), intent(in) :: pertvegf
+! BWG: Dimension(6) gave errors; dimension(5) works
+! Other developers need to resolve
+!      real (kind=kind_phys), dimension(6), intent(in) :: pertvegf
+      real (kind=kind_phys), dimension(5), intent(in) :: pertvegf
 
       integer, dimension(im), intent(in) :: soiltyp, vegtype, slopetyp
+
+      integer, dimension(im), intent(in) :: idry
 
       real (kind=kind_phys), dimension(im), intent(in) :: ps, u1, v1,   &
      &       t1, q1, sigmaf, sfcemis, dlwflx, dswsfc, snet, tg3, cm,    &
@@ -187,14 +194,13 @@
      &       snoalb, sfalb, zf,
      &       bexppert, xlaipert, vegfpert
 
-      integer, dimension(im), intent(in) :: islimsk
       real (kind=kind_phys),  intent(in) :: delt
 
       logical, dimension(im), intent(in) :: flag_iter, flag_guess
 
 !  ---  in/out:
       real (kind=kind_phys), dimension(im), intent(inout) :: weasd,     &
-     &       snwdph, tskin, tprcp, srflag, canopy, trans, tsurf
+     &       snwdph, tskin, tprcp, srflag, canopy, trans, tsurf, zorl
 
       real (kind=kind_phys), dimension(im,km), intent(inout) ::         &
      &       smc, stc, slc
@@ -203,7 +209,7 @@
       real (kind=kind_phys), dimension(im), intent(out) :: sncovr1,     &
      &       qsurf, gflux, drain, evap, hflx, ep, runoff, cmm, chh,     &
      &       evbs, evcw, sbsno, snowc, stm, snohf, smcwlt2, smcref2,    &
-     &       zorl, wet1
+     &       wet1
     
 !  ---  locals:
       real (kind=kind_phys), dimension(im) :: rch, rho,                 &
@@ -238,7 +244,7 @@
 !  --- ...  set flag for land points
 
       do i = 1, im
-        flag(i) = (islimsk(i) == 1)
+        flag(i) = (idry(i) == 1)
       enddo
 
 !  --- ...  save land-related prognostic fields for guess run
@@ -604,3 +610,4 @@
 !-----------------------------------
 !> @}
 !> @}
+       end module mdul_sfc_drv

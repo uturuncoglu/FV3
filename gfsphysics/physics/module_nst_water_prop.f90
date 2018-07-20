@@ -1,6 +1,7 @@
 module module_nst_water_prop
   use machine, only : kind_phys
   use module_nst_parameters, only : t0k
+  use mdul_sfc_sice,         only : cimin
   !
   private
   public :: rhocoef,density,sw_rad,sw_rad_aw,sw_rad_sum,sw_rad_upper,sw_rad_upper_aw,sw_rad_skin,grv,solar_time_from_julian,compjd, &
@@ -597,7 +598,7 @@ end subroutine solar_time_from_julian
 
  end subroutine get_dtzm_point
 
- subroutine get_dtzm_2d(xt,xz,dt_cool,zc,slmsk,z1,z2,nx,ny,dtm)
+ subroutine get_dtzm_2d(xt,xz,dt_cool,zc,iwet,cice,z1,z2,nx,ny,dtm)
 ! ===================================================================== !
 !                                                                       !
 !  description:  get dtm = mean of dT(z) (z1 - z2) with NSST dT(z)      !
@@ -632,7 +633,8 @@ end subroutine solar_time_from_julian
   implicit none
 
   integer, intent(in) :: nx,ny
-  real (kind=kind_phys), dimension(nx,ny), intent(in)  :: xt,xz,dt_cool,zc,slmsk
+  real (kind=kind_phys), dimension(nx,ny), intent(in)  :: xt,xz,dt_cool,zc,cice
+  integer, dimension(nx,ny), intent(in)  :: iwet
   real (kind=kind_phys), intent(in)  :: z1,z2
   real (kind=kind_phys), dimension(nx,ny), intent(out) :: dtm                    
 ! Local variables
@@ -649,7 +651,7 @@ end subroutine solar_time_from_julian
 !
       dtw(i,j) = 0.0      
       dtc(i,j) = 0.0      
-      if ( slmsk(i,j) == 0.0 ) then
+      if ( iwet(i,j) == 1 .and. cice(i,j) < cimin ) then
 !
 !       get the mean warming in the range of z=z1 to z=z2
 !
@@ -692,7 +694,7 @@ end subroutine solar_time_from_julian
 !$omp parallel do private(j,i)
   do j = 1, ny
     do i= 1, nx
-      if ( slmsk(i,j) == 0.0 ) then
+      if ( iwet(i,j) == 1 .and. cice(i,j) < cimin ) then
         dtm(i,j) = dtw(i,j) - dtc(i,j)
       endif
     enddo

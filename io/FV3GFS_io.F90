@@ -100,6 +100,7 @@ module FV3GFS_io_mod
 !--- miscellaneous other variables
   logical :: use_wrtgridcomp_output = .FALSE.
   logical :: module_is_initialized  = .FALSE.
+  logical :: backward_bitw = .true.	! for backward bitwise identity
 
   CONTAINS
 
@@ -457,9 +458,9 @@ module FV3GFS_io_mod
     !--- SURFACE FILE
     if (.not. allocated(sfc_name2)) then
       !--- allocate the various containers needed for restarts
-      allocate(sfc_name2(nvar_s2m+nvar_s2o))
+      allocate(sfc_name2(nvar_s2m+nvar_s2o+2))
       allocate(sfc_name3(nvar_s3))
-      allocate(sfc_var2(nx,ny,nvar_s2m+nvar_s2o))
+      allocate(sfc_var2(nx,ny,nvar_s2m+nvar_s2o+2))
       allocate(sfc_var3(nx,ny,Model%lsoil,nvar_s3))
       sfc_var2 = -9999._kind_phys
       sfc_var3 = -9999._kind_phys
@@ -517,6 +518,9 @@ module FV3GFS_io_mod
       sfc_name2(48) = 'ifd'
       sfc_name2(49) = 'dt_cool'
       sfc_name2(50) = 'qrain'
+
+      sfc_name2(51) = 'ocean_frac'
+      sfc_name2(52) = 'lake_frac'
  
       !--- register the 2D fields
       do num = 1,nvar_s2m
@@ -535,6 +539,19 @@ module FV3GFS_io_mod
           id_restart = register_restart_field(Sfc_restart, fn_srf, sfc_name2(num), var2_p, domain=fv_domain, mandatory=mand)
         enddo
       endif
+
+    if (.not.backward_bitw) then
+      ! -- land and lake
+      do num = nvar_s2m+nvar_s2o+1,nvar_s2m+nvar_s2o+2   ! num  = 51, 52
+        var2_p => sfc_var2(:,:,num)
+        id_restart = register_restart_field(Sfc_restart, fn_srf, sfc_name2(num), var2_p, domain=fv_domain, mandatory=mand)
+      enddo
+    else  ! set it to zero for bitwise identical test
+      do num = nvar_s2m+nvar_s2o+1,nvar_s2m+nvar_s2o+2   ! num  = 51, 52
+        sfc_var2(:,:,num)=0.
+      enddo
+   end if
+
       nullify(var2_p)
  
       !--- names of the 2D variables to save
@@ -624,6 +641,13 @@ module FV3GFS_io_mod
         Sfcprop(nb)%snoalb(ix) = sfc_var2(i,j,31)
         !--- sncovr
         Sfcprop(nb)%sncovr(ix) = sfc_var2(i,j,32)
+        !- ocean, lake and land fraction
+!       Sfcprop(nb)%ocn(ix) =            sfc_var2(i,j,51)                  *1000. !ocean frac per thousands
+!       Sfcprop(nb)%lak(ix) =            sfc_var2(i,j,52)                  *1000. ! lake frac per thousands
+!       Sfcprop(nb)%lnd(ix) = (1.0 - max(sfc_var2(i,j,51),sfc_var2(i,j,52))*1000. ! land frac per thousands
+        Sfcprop(nb)%ocn(ix) =            sfc_var2(i,j,51)			  !ocean frac [0:1]
+        Sfcprop(nb)%lak(ix) =            sfc_var2(i,j,52)			  ! lake frac [0:1]
+        Sfcprop(nb)%lnd(ix) =  1.0 - max(sfc_var2(i,j,51),sfc_var2(i,j,52))	  ! land frac [0:1]
         !
         !--- NSSTM variables
         if ((Model%nstf_name(1) > 0) .and. (Model%nstf_name(2) == 1)) then
@@ -680,6 +704,10 @@ module FV3GFS_io_mod
             Sfcprop(nb)%slc(ix,lsoil) = sfc_var3(i,j,lsoil,3)
         enddo
       enddo
+!      if (Model%me == Model%master) write(*,*) '...and oll-land',Atm_block%nblks, nb,&
+!        Atm_block%blksz(nb), Sfcprop(nb)%land(:)
+!      if (Model%me == Model%master) write(*,*) '...and oll-lake',Atm_block%nblks, nb,&
+!        Atm_block%blksz(nb), Sfcprop(nb)%lake(:)
     enddo
 
     !--- if sncovr does not exist in the restart, need to create it
@@ -748,9 +776,9 @@ module FV3GFS_io_mod
 
     if (.not. allocated(sfc_name2)) then
       !--- allocate the various containers needed for restarts
-      allocate(sfc_name2(nvar2m+nvar2o))
+      allocate(sfc_name2(nvar2m+nvar2o+2))
       allocate(sfc_name3(nvar3))
-      allocate(sfc_var2(nx,ny,nvar2m+nvar2o))
+      allocate(sfc_var2(nx,ny,nvar2m+nvar2o+2))
       allocate(sfc_var3(nx,ny,Model%lsoil,nvar3))
       sfc_var2 = -9999._kind_phys
       sfc_var3 = -9999._kind_phys
@@ -808,6 +836,9 @@ module FV3GFS_io_mod
       sfc_name2(48) = 'ifd'
       sfc_name2(49) = 'dt_cool'
       sfc_name2(50) = 'qrain'
+
+      sfc_name2(51) = 'ocean_frac'
+      sfc_name2(52) = 'lake_frac'
  
       !--- register the 2D fields
       do num = 1,nvar2m
@@ -826,6 +857,18 @@ module FV3GFS_io_mod
           id_restart = register_restart_field(Sfc_restart, fn_srf, sfc_name2(num), var2_p, domain=fv_domain, mandatory=mand)
         enddo
       endif
+
+    if (.not.backward_bitw) then
+      do num = nvar2m+nvar2o+1,nvar2m+nvar2o+2
+        var2_p => sfc_var2(:,:,num)
+        id_restart = register_restart_field(Sfc_restart, fn_srf, sfc_name2(num), var2_p, domain=fv_domain)
+      enddo
+    else
+        do num = nvar2m+nvar2o+1,nvar2m+nvar2o+2
+          sfc_var2(:,:,num) = 0.
+        enddo
+    end if
+
       nullify(var2_p)
  
       !--- names of the 2D variables to save
@@ -910,6 +953,9 @@ module FV3GFS_io_mod
         sfc_var2(i,j,31) = Sfcprop(nb)%snoalb(ix)
         !--- sncovr
         sfc_var2(i,j,32) = Sfcprop(nb)%sncovr(ix)
+        !--- ocean and lake fraction
+        sfc_var2(i,j,51) = Sfcprop(nb)%ocn(ix)
+        sfc_var2(i,j,52) = Sfcprop(nb)%lak(ix)
         !--- NSSTM variables
         if (Model%nstf_name(1) > 0) then
           !--- nsstm tref

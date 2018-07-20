@@ -145,6 +145,9 @@ module GFS_typedefs
 
 !--- In (radiation and physics)
     real (kind=kind_phys), pointer :: slmsk  (:)   => null()  !< sea/land mask array (sea:0,land:1,sea-ice:2)
+    real (kind=kind_phys), pointer :: ocn    (:)   => null()  !< ocean fraction array
+    real (kind=kind_phys), pointer :: lnd    (:)   => null()  !<  land fraction array
+    real (kind=kind_phys), pointer :: lak    (:)   => null()  !<  lake fraction array
     real (kind=kind_phys), pointer :: tsfc   (:)   => null()  !< surface temperature in k 
                                                               !< [tsea in gbphys.f]
     real (kind=kind_phys), pointer :: tisfc  (:)   => null()  !< surface temperature over ice fraction 
@@ -1041,6 +1044,9 @@ module GFS_typedefs
 
     !--- physics and radiation
     allocate (Sfcprop%slmsk  (IM))
+    allocate (Sfcprop%ocn    (IM))
+    allocate (Sfcprop%lnd    (IM))
+    allocate (Sfcprop%lak    (IM))
     allocate (Sfcprop%tsfc   (IM))
     allocate (Sfcprop%tisfc  (IM))
     allocate (Sfcprop%snowd  (IM))
@@ -1050,6 +1056,9 @@ module GFS_typedefs
     allocate (Sfcprop%hprime (IM,Model%nmtvr))
 
     Sfcprop%slmsk   = clear_val
+    Sfcprop%ocn     = clear_val
+    Sfcprop%lnd     = clear_val
+    Sfcprop%lak     = clear_val
     Sfcprop%tsfc    = clear_val
     Sfcprop%tisfc   = clear_val
     Sfcprop%snowd   = clear_val

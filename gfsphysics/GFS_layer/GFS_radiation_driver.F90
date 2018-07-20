@@ -347,6 +347,7 @@
                                            GFS_diag_type
 
       use module_physics_driver,     only: dgamln, cdfgam, cdfnor
+      use mdul_sfc_sice,             only: cimin
 !
       implicit   none
 !
@@ -1248,6 +1249,9 @@
 
 !     logical effr_in
 !     data effr_in/.false./
+      real(kind=kind_phys), dimension(size(Grid%xlon,1))  ::            &
+          Sfcprop_ocn, Sfcprop_lnd, Sfcprop_lak  ! Fractions btwn 0 and 1
+      integer, dimension(size(Grid%xlon,1)) :: iwet, idry
 !
 !===> ...  begin here
 !
@@ -1303,20 +1307,30 @@
       raddt = min(Model%fhswr, Model%fhlwr)
 !     print *,' in grrad : raddt=',raddt
 
+! BWG modify, 11 July 2018: Set up sfc masks and comment out redundant
+! loops
 !> -# Setup surface ground temperature and ground/air skin temperature
 !! if required.
+      do i = 1, IM
+        tskn(i) = Sfcprop%tsfc(i)
+        tsfg(i) = Sfcprop%tsfc(i)
 
-      if ( itsfc == 0 ) then            ! use same sfc skin-air/ground temp
-        do i = 1, IM
-          tskn(i) = Sfcprop%tsfc(i)
-          tsfg(i) = Sfcprop%tsfc(i)
-        enddo
-      else                              ! use diff sfc skin-air/ground temp
-        do i = 1, IM
-          tskn(i) = Sfcprop%tsfc(i)
-          tsfg(i) = Sfcprop%tsfc(i)
-        enddo
-      endif
+        if(Sfcprop%slmsk(i) == 0. .or. Sfcprop%slmsk(i) == 2.) then
+          Sfcprop_lnd(i) = 0.
+          Sfcprop_ocn(i) = 1. 
+          Sfcprop_lak(i) = 0.
+        elseif(Sfcprop%slmsk(i) > 0. .and. Sfcprop%slmsk(i) <= 1.) then
+          Sfcprop_lnd(i) = Sfcprop%slmsk(i)
+          Sfcprop_ocn(i) = 1. - Sfcprop_lnd(i)
+          Sfcprop_lak(i) = 0.
+        endif
+
+        idry(i) = 0
+        iwet(i) = 0
+        if(Sfcprop_lnd(i) > 0.) idry(i) = 1
+        if(Sfcprop_ocn(i) > 0. .or. Sfcprop_lak(i) > 0.) iwet(i) = 1
+      enddo
+! End of BWG modify, 11 July 2018
 
 !> -# Prepare atmospheric profiles for radiation input.
 !
@@ -1800,14 +1814,28 @@
 !>  - Call module_radiation_surface::setalb() to setup surface albedo.
 !!  for SW radiation.
 
-        call setalb (Sfcprop%slmsk, Sfcprop%snowd, Sfcprop%sncovr,&    !  ---  inputs:
-                     Sfcprop%snoalb, Sfcprop%zorl, Radtend%coszen,&
+! BWG modify, 14 June 2018: Prep for fractional coastline
+! NOTE 1: First Sfcprop%zorl is for zorl_land, second is for sea ice
+! NOTE 2: tsfg needs to be changed for SEA skin temperature
+!        call setalb (Sfcprop%slmsk, Sfcprop%snowd, Sfcprop%sncovr,&    !  ---  inputs:
+!                     Sfcprop%snoalb, Sfcprop%zorl, Radtend%coszen,&
+!                     tsfg, tsfa, Sfcprop%hprim, Sfcprop%alvsf,    &
+!                     Sfcprop%alnsf, Sfcprop%alvwf, Sfcprop%alnwf, &
+!                     Sfcprop%facsf, Sfcprop%facwf, Sfcprop%fice,  &
+!                     Sfcprop%tisfc, IM,                           &
+!                     sfcalb)                                           !  ---  outputs
+
+        call setalb (iwet,idry,                                   &
+                     Sfcprop%snowd, Sfcprop%sncovr,               &    !  ---  inputs:
+                     Sfcprop%snoalb, Sfcprop%zorl, Sfcprop%zorl,  &
+                     Radtend%coszen, Grid%xlon, Grid%xlat, &
                      tsfg, tsfa, Sfcprop%hprim, Sfcprop%alvsf,    &
                      Sfcprop%alnsf, Sfcprop%alvwf, Sfcprop%alnwf, &
                      Sfcprop%facsf, Sfcprop%facwf, Sfcprop%fice,  &
                      Sfcprop%tisfc, IM,                           &
                      alb1d, Model%pertalb,                        &    !  mg, sfc-perts
                      sfcalb)                                           !  ---  outputs
+! End of BWG modify, 14 June 2018
 
 !> -# Approximate mean surface albedo from vis- and nir-  diffuse values.
         Radtend%sfalb(:) = max(0.01, 0.5 * (sfcalb(:,2) + sfcalb(:,4)))
@@ -1914,10 +1942,19 @@
 !>  - Call module_radiation_surface::setemis(),to setup surface
 !! emissivity for LW radiation.
 
-        call setemis (Grid%xlon, Grid%xlat, Sfcprop%slmsk,         &        !  ---  inputs
-                      Sfcprop%snowd, Sfcprop%sncovr, Sfcprop%zorl, &
+! BWG modify, 14 June 2018: Eventually, the first zorl will be land,
+!   and the second zorl will be ice
+!        call setemis (Grid%xlon, Grid%xlat, Sfcprop%slmsk,         &        !  ---  inputs
+!                      Sfcprop%snowd, Sfcprop%sncovr, Sfcprop%zorl, &
+!                      tsfg, tsfa, Sfcprop%hprim, IM,               & 
+!                      Radtend%semis)                                              !  ---  outputs
+        call setemis (Grid%xlon, Grid%xlat, iwet, idry,            &
+                      Sfcprop_ocn,Sfcprop_lnd,Sfcprop_lak,         &        !  ---  inputs
+                      Sfcprop%snowd, Sfcprop%sncovr,               &
+                      Sfcprop%zorl, Sfcprop%zorl, Sfcprop%fice,    &
                       tsfg, tsfa, Sfcprop%hprim, IM,               & 
                       Radtend%semis)                                              !  ---  outputs
+! End of BWG modify, 14 June 2018
 
 !>  - Call module_radlw_main::lwrad(), to compute LW heating rates and
 !!    fluxes.

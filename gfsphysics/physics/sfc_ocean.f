@@ -1,9 +1,13 @@
+      module mdul_sfc_ocean
+      use mdul_sfc_sice, only: cimin
+
+      contains
 !-----------------------------------
       subroutine sfc_ocean                                              &
 !...................................
 !  ---  inputs:
      &     ( im, ps, u1, v1, t1, q1, tskin, cm, ch,                     &
-     &       prsl1, prslki, islimsk, ddvel, flag_iter,                  &
+     &       prsl1, prslki, iwet, covice, ddvel, flag_iter,             &
 !  ---  outputs:
      &       qsurf, cmm, chh, gflux, evap, hflx, ep                     &
      &     )
@@ -16,7 +20,7 @@
 !    call sfc_ocean                                                     !
 !       inputs:                                                         !
 !          ( im, ps, u1, v1, t1, q1, tskin, cm, ch,                     !
-!            prsl1, prslki, islimsk, ddvel, flag_iter,                  !
+!            prsl1, prslki, iwet, covice, ddvel, flag_iter,             !
 !       outputs:                                                        !
 !            qsurf, cmm, chh, gflux, evap, hflx, ep )                   !
 !                                                                       !
@@ -47,7 +51,8 @@
 !     ch       - real, surface exchange coeff heat & moisture(m/s) im   !
 !     prsl1    - real, surface layer mean pressure                 im   !
 !     prslki   - real,                                             im   !
-!     islimsk  - integer, sea/land/ice mask (=0/1/2)               im   !
+!     iwet     - integer, =1 if any water, =0 if 100% land         im   !
+!     covice   - real, ice fraction				   im   !
 !     ddvel    - real, wind enhancement due to convection (m/s)    im   !
 !     flag_iter- logical,                                          im   !
 !                                                                       !
@@ -77,10 +82,9 @@
 
 !  ---  inputs:
       integer, intent(in) :: im
-
+      integer, dimension(im), intent(in) :: iwet
       real (kind=kind_phys), dimension(im), intent(in) :: ps, u1, v1,   &
-     &      t1, q1, tskin, cm, ch, prsl1, prslki, ddvel
-      integer, dimension(im), intent(in):: islimsk
+     &      t1, q1, tskin, cm, ch, prsl1, prslki, ddvel, covice
 
       logical, intent(in) :: flag_iter(im)
 
@@ -100,7 +104,8 @@
 !
 !  --- ...  flag for open water
       do i = 1, im
-        flag(i) = ( islimsk(i) == 0 .and. flag_iter(i) )
+        flag(i) = ( iwet(i) == 1 .and. covice(i) < cimin
+     &                           .and. flag_iter(i) )
 
 !  --- ...  initialize variables. all units are supposedly m.k.s. unless specified
 !           ps is in pascals, wind is wind speed, 
@@ -145,3 +150,4 @@
 !...................................
       end subroutine sfc_ocean
 !-----------------------------------
+      end module mdul_sfc_ocean
