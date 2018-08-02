@@ -44,7 +44,7 @@ module atmos_model_mod
 
 use mpp_mod,            only: mpp_pe, mpp_root_pe, mpp_clock_id, mpp_clock_begin
 use mpp_mod,            only: mpp_clock_end, CLOCK_COMPONENT, MPP_CLOCK_SYNC
-use mpp_mod,            only: mpp_min, mpp_max, mpp_error, mpp_chksum, FATAL
+use mpp_mod,            only: FATAL, mpp_min, mpp_max, mpp_error, mpp_chksum
 use mpp_domains_mod,    only: domain2d
 use mpp_mod,            only: mpp_get_current_pelist_name
 #ifdef INTERNAL_FILE_NML
@@ -84,8 +84,16 @@ use DYCORE_typedefs,    only: DYCORE_data_type, DYCORE_diag_type
 use IPD_typedefs,       only: IPD_init_type, IPD_control_type, &
                               IPD_data_type, IPD_diag_type,    &
                               IPD_restart_type, IPD_kind_phys, &
+#ifdef CCPP
+                              IPD_func0d_proc, IPD_func1d_proc,&
+                              IPD_fastphys_type
+#else
                               IPD_func0d_proc, IPD_func1d_proc
+#endif
 use IPD_driver,         only: IPD_initialize, IPD_step
+#ifdef CCPP
+use IPD_CCPP_driver,    only: IPD_CCPP_step
+#endif
 use physics_abstraction_layer, only: time_vary_step, radiation_step1, physics_step1, physics_step2
 use FV3GFS_io_mod,      only: FV3GFS_restart_read, FV3GFS_restart_write, &
                               FV3GFS_IPD_checksum,                       &
@@ -114,6 +122,8 @@ public addLsmask2grid
                                                          ! (they correspond to the x, y, pfull, phalf axes)
      integer, pointer              :: pelist(:) =>null() ! pelist where atmosphere is running.
      integer                       :: layout(2)          ! computer task laytout
+     logical                       :: regional           ! true if domain is regional
+     integer                       :: mlon, mlat
      logical                       :: pe                 ! current pe.
      real(kind=8),             pointer, dimension(:)     :: ak, bk
      real,                     pointer, dimension(:,:)   :: lon_bnd  => null() ! local longitude axis grid box corners in radians.
@@ -145,6 +155,13 @@ integer, parameter     :: maxhr = 4096
 real, dimension(maxhr) :: fdiag = 0.
 real                   :: fhmax=240.0, fhmaxhf=120.0, fhout=3.0, fhouthf=1.0
 namelist /atmos_model_nml/ blocksize, chksum_debug, dycore_only, debug, sync, fdiag, fhmax, fhmaxhf, fhout, fhouthf
+#ifdef CCPP
+character(len=256)     :: ccpp_suite='undefined.xml'
+namelist /atmos_model_nml/ blocksize, chksum_debug, dycore_only, debug, sync, fdiag, fhmax, fhmaxhf, fhout, fhouthf, ccpp_suite
+#else
+namelist /atmos_model_nml/ blocksize, chksum_debug, dycore_only, debug, sync, fdiag, fhmax, fhmaxhf, fhout, fhouthf
+#endif
+
 type (time_type) :: diag_time
 
 !--- concurrent and decoupled radiation and physics variables
@@ -161,6 +178,9 @@ type(IPD_control_type)              :: IPD_Control
 type(IPD_data_type),    allocatable :: IPD_Data(:)  ! number of blocks
 type(IPD_diag_type),    target      :: IPD_Diag(DIAG_SIZE)
 type(IPD_restart_type)              :: IPD_Restart
+#ifdef CCPP
+type(IPD_fastphys_type)             :: IPD_Fastphys
+#endif
 
 !--------------
 ! IAU container
@@ -391,7 +411,7 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
    call atmosphere_resolution (nlon, nlat, global=.false.)
    call atmosphere_resolution (mlon, mlat, global=.true.)
    call alloc_atmos_data_type (nlon, nlat, Atmos)
-   call atmosphere_domain (Atmos%domain, Atmos%layout)
+   call atmosphere_domain (Atmos%domain, Atmos%layout, Atmos%regional)
    call atmosphere_diag_axes (Atmos%axes)
    call atmosphere_etalvls (Atmos%ak, Atmos%bk, flip=flip_vc)
    call atmosphere_grid_bdry (Atmos%lon_bnd, Atmos%lat_bnd, global=.false.)
@@ -399,6 +419,8 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
    call atmosphere_hgt (Atmos%layer_hgt, 'layer', relative=.false., flip=flip_vc)
    call atmosphere_hgt (Atmos%level_hgt, 'level', relative=.false., flip=flip_vc)
 
+   Atmos%mlon = mlon
+   Atmos%mlat = mlat
 !-----------------------------------------------------------------------
 !--- before going any further check definitions for 'blocks'
 !-----------------------------------------------------------------------
@@ -457,6 +479,14 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
    if (.not. fexist ) then
       Init_parm%fn_nml='input.nml'
    endif
+#endif
+
+#ifdef CCPP
+! DH* for testing of CCPP integration
+  ! Fast physics runs over all blocks, initialize here to avoid changing all the interfaces down to GFS_driver
+   call IPD_Fastphys%create()
+   call IPD_CCPP_step (step="init", IPD_Control=IPD_Control, IPD_Fastphys=IPD_Fastphys, ccpp_suite=trim(ccpp_suite), ierr=ierr)
+   if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP init step failed')
 #endif
 
    call IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, Init_parm)
@@ -668,7 +698,8 @@ subroutine update_atmos_model_state (Atmos)
       if (mpp_pe() == mpp_root_pe()) write(6,*) ' gfs diags time since last bucket empty: ',time_int/3600.,'hrs'
       call atmosphere_nggps_diag(Atmos%Time)
       call FV3GFS_diag_output(Atmos%Time, IPD_DIag, Atm_block, IPD_Control%nx, IPD_Control%ny, &
-                            IPD_Control%levs, 1, 1, 1.d0, time_int, time_intfull)
+                            IPD_Control%levs, 1, 1, 1.d0, time_int, time_intfull,              &
+                            IPD_Control%fhswr, IPD_Control%fhlwr)
       if (mod(isec,3600*nint(IPD_Control%fhzero)) == 0) diag_time = Atmos%Time
       call diag_send_complete_instant (Atmos%Time)
     endif
@@ -716,6 +747,9 @@ subroutine atmos_model_end (Atmos)
   type (atmos_data_type), intent(inout) :: Atmos
 !---local variables
   integer :: idx
+#ifdef CCPP
+  integer :: ierr
+#endif
 
 !-----------------------------------------------------------------------
 !---- termination routine for atmospheric model ----
@@ -723,6 +757,11 @@ subroutine atmos_model_end (Atmos)
     call atmosphere_end (Atmos % Time, Atmos%grid)
     call FV3GFS_restart_write (IPD_Data, IPD_Restart, Atm_block, &
                                IPD_Control, Atmos%domain)
+
+#ifdef CCPP
+   call IPD_CCPP_step (step="finalize", ierr=ierr)
+   if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP finalize step failed')
+#endif
 
 end subroutine atmos_model_end
 

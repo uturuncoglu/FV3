@@ -19,7 +19,7 @@ LIBRARY  = libgfsphys.a
 
 FFLAGS   += -I../fms -I../fms/include -I../cpl
 
-CPPDEFS = -DNEW_TAUCTMAX -DSMALL_PE -DNEMS_GSM -DINTERNAL_FILE_NML
+CPPDEFS += -DNEW_TAUCTMAX -DSMALL_PE -DNEMS_GSM -DINTERNAL_FILE_NML
 
 SRCS_f   =  \
 	   ./physics/cnvc90.f                                                        \
@@ -196,7 +196,7 @@ endif
 clean:
 	@echo "Cleaning gfsphysics  ... "
 	@echo
-	$(RM) -f $(LIBRARY) *__genmod.f90 *.o */*.o *.mod *.lst *.i depend
+	$(RM) -f $(LIBRARY) *__genmod.f90 *.o */*.o *.mod *.i90 *.lst *.i depend
 
 MKDEPENDS = ../mkDepends.pl
 include ../conf/make.rules
