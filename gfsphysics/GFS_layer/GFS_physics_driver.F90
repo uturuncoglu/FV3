@@ -850,28 +850,22 @@ module module_physics_driver
           frland(i) = 0.
         endif
 
-        if(.not. backward_bitw) then
-! setting temporary lake mask
-          if((Sfcprop%slmsk(i) == 0. .or. Sfcprop%slmsk(i) == 2.) .and. Sfcprop%ocn(i) == 0.) then
-            Sfcprop%lak(i) = 1.
-            Sfcprop%lnd(i) = 0.
-          end if
-        else
+        if(backward_bitw) then ! use slmsk to get bitwise identical results
           if(Sfcprop%slmsk(i) == 1.) then   ! land
-            Sfcprop%lnd(i) = 1.
-            Sfcprop%ocn(i) = 0.
-            Sfcprop%lak(i) = 0.
+            Sfcprop%lndfrac(i) = 1.
+            Sfcprop%ocnfrac(i) = 0.
+            Sfcprop%lakfrac(i) = 0.
           else ! ocean or lake or ice
-            Sfcprop%lnd(i) = 0.
-            Sfcprop%ocn(i) = 1.
-            Sfcprop%lak(i) = 0.
+            Sfcprop%lndfrac(i) = 0.
+            Sfcprop%ocnfrac(i) = 1.
+            Sfcprop%lakfrac(i) = 0.
           end if
         end if
 
         idry(i) = 0
         iwet(i) = 0
-        if(Sfcprop%lnd(i) > 0.) idry(i) = 1
-        if(Sfcprop%ocn(i) > 0. .or. Sfcprop%lak(i) > 0.) iwet(i) = 1
+        if(Sfcprop%lndfrac(i) > 0.) idry(i) = 1
+        if(Sfcprop%ocnfrac(i) > 0. .or. Sfcprop%lakfrac(i) > 0.) iwet(i) = 1
 
         if (islmsk(i) == 2) then
           if (Model%isot == 1) then
@@ -1450,95 +1444,95 @@ module module_physics_driver
 
 !            
 ! Three-way composites (fields from sfc_diff_ocean, sfc_diff_land, sfc_diff_ice)
-        Sfcprop%zorl(i)   = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        Sfcprop%zorl(i)   = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                               zorl_ocn(i),  zorl_lnd(i),  zorl_ice(i))
-        cd(i)             = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        cd(i)             = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i), 	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                                 cd_ocn(i),    cd_lnd(i),    cd_ice(i))
-        cdq(i)            = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        cdq(i)            = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                                cdq_ocn(i),   cdq_lnd(i),   cdq_ice(i))
-        rb(i)             = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        rb(i)             = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                                 rb_ocn(i),    rb_lnd(i),    rb_ice(i))
-        stress(i)         = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        stress(i)         = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                             stress_ocn(i),stress_lnd(i),stress_ice(i))
-        Sfcprop%ffmm(i)   = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        Sfcprop%ffmm(i)   = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                               ffmm_ocn(i),  ffmm_lnd(i),  ffmm_ice(i))
-        Sfcprop%ffhh(i)   = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        Sfcprop%ffhh(i)   = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                               ffhh_ocn(i),  ffhh_lnd(i),  ffhh_ice(i))
-        Sfcprop%uustar(i) = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        Sfcprop%uustar(i) = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                             uustar_ocn(i),uustar_lnd(i),uustar_ice(i))
-        fm10(i)           = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        fm10(i)           = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                               fm10_ocn(i),  fm10_lnd(i),  fm10_ice(i))
-        fh2(i)            = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        fh2(i)            = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                                fh2_ocn(i),   fh2_lnd(i),   fh2_ice(i))
-        tsurf(i)          = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        tsurf(i)          = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                              tsurf_ocn(i), tsurf_lnd(i), tsurf_ice(i))
-        Diag%cmm(i)       = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        Diag%cmm(i)       = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                                cmm_ocn(i),   cmm_lnd(i),   cmm_ice(i))
-        Diag%chh(i)       = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        Diag%chh(i)       = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                                chh_ocn(i),   chh_lnd(i),   chh_ice(i))
-        gflx(i)           = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        gflx(i)           = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                               gflx_ocn(i),  gflx_lnd(i),  gflx_ice(i))
-        ep1d(i)           = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        ep1d(i)           = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                               ep1d_ocn(i),  ep1d_lnd(i),  ep1d_ice(i))
-        Sfcprop%weasd(i)  = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        Sfcprop%weasd(i)  = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                              weasd_ocn(i), weasd_lnd(i), weasd_ice(i))
-        Sfcprop%snowd(i)  = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        Sfcprop%snowd(i)  = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                              snowd_ocn(i), snowd_lnd(i), snowd_ice(i))
-        Sfcprop%tprcp(i)  = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        Sfcprop%tprcp(i)  = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                              tprcp_ocn(i), tprcp_lnd(i), tprcp_ice(i))
 
         do n=1,Model%lsoil
-          stsoil(i,n)     = cmposit3(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+          stsoil(i,n)     = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                             stsoil_ocn(i,n),stsoil_lnd(i,n),stsoil_ice(i,n))
         end do
 
 ! Two-way composites (fields already composited in sfc_sice)
-        evap(i)           = cmposit2(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        evap(i)           = cmposit2(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                               evap_ocn(i),  evap_lnd(i),  evap_ice(i))
-        hflx(i)           = cmposit2(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        hflx(i)           = cmposit2(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                               hflx_ocn(i),  hflx_lnd(i),  hflx_ice(i))
-        qss(i)            = cmposit2(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        qss(i)            = cmposit2(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                                qss_ocn(i),   qss_lnd(i),   qss_ice(i))
-        Sfcprop%tsfc(i)   = cmposit2(Sfcprop%ocn(i),Sfcprop%lnd(i),     &
-                                     Sfcprop%lak(i),cice(i),		&
+        Sfcprop%tsfc(i)   = cmposit2(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
                               tsfc_ocn(i),  tsfc_lnd(i),  tsfc_ice(i))
 
-!        if (abs(grid%xlat(i)-testp(1)) +				&
-!            abs(grid%xlon(i)-testp(2))<1.e-2)				&
-!          print 94,'after comp3    slmsk,dryf,fice=',islmsk(i),	&
-!          dryfrac(i),cice(i),'    lat,lon=',grid%xlat(i),grid%xlon(i),&
-!          'mskLnd',sfcmsk(i,0),'mskOcn',sfcmsk(i,1),'mskLak',sfcmsk(i,2), &
-!          'zorl',Sfcprop%zorl(i),'cd',cd(i),'cdq',cdq(i),'rb',rb(i),	&
-!          'stress',stress(i),'ffmm',Sfcprop%ffmm(i),			&
-!          'ffhh',Sfcprop%ffhh(i),'fm10',fm10(i),'fh2',fh2(i),		&
-!          'qss',qss(i),'cmm',Diag%cmm(i),'chh',Diag%chh(i),		&
-!          'gflx',gflx(i),'evap',evap(i),'hflx',hflx(i),'ep1d',ep1d(i),	&
-!          'weasd',Sfcprop%weasd(i),'snowd_i',Sfcprop%snowd(i),		&
-!          'tprcp',Sfcprop%tprcp(i),'tsfc',Sfcprop%tsfc(i),		&
-!          'tsurf',tsurf(i),'tsfcOcn',tsfc_ocn(i),'tsfcLnd',tsfc_lnd(i), &
-!          'tsfcIce',tsfc_ice(i),'tsurOcn',tsurf_ocn(i),                 &
+!        if (abs(grid%xlat(i)-testp(1)) +					&
+!            abs(grid%xlon(i)-testp(2))<1.e-2)					&
+!          print 94,'after comp3    slmsk,dryf,fice=',islmsk(i),		&
+!          dryfrac(i),cice(i),'    lat,lon=',grid%xlat(i),grid%xlon(i),		&
+!          'mskLnd',sfcmsk(i,0),'mskOcn',sfcmsk(i,1),'mskLak',sfcmsk(i,2),	&
+!          'zorl',Sfcprop%zorl(i),'cd',cd(i),'cdq',cdq(i),'rb',rb(i),		&
+!          'stress',stress(i),'ffmm',Sfcprop%ffmm(i),				&
+!          'ffhh',Sfcprop%ffhh(i),'fm10',fm10(i),'fh2',fh2(i),			&
+!          'qss',qss(i),'cmm',Diag%cmm(i),'chh',Diag%chh(i),			&
+!          'gflx',gflx(i),'evap',evap(i),'hflx',hflx(i),'ep1d',ep1d(i),		&
+!          'weasd',Sfcprop%weasd(i),'snowd_i',Sfcprop%snowd(i),			&
+!          'tprcp',Sfcprop%tprcp(i),'tsfc',Sfcprop%tsfc(i),			&
+!          'tsurf',tsurf(i),'tsfcOcn',tsfc_ocn(i),'tsfcLnd',tsfc_lnd(i), 	&
+!          'tsfcIce',tsfc_ice(i),'tsurOcn',tsurf_ocn(i),                 	&
 !          'tsurLnd',tsurf_lnd(i),'tsurIce',tsurf_ice(i)                
 !  94      format (a,i3,2f6.2,a,2f9.5/(3(a8,'=',i6))/(4(a8,'=',es11.4)))
 
