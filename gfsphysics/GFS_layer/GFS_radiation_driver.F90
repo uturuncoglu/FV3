@@ -399,8 +399,6 @@
 
       public radinit, radupdate, GFS_radiation_driver
 
-!> Testing for fractional coastline
-      logical :: backward_bitw = .true.     ! for backward bitwise identity
 
 ! =================
       contains
@@ -1250,7 +1248,6 @@
 
 !     logical effr_in
 !     data effr_in/.false./
-      integer, dimension(size(Grid%xlon,1)) :: iwet, idry
 !
 !===> ...  begin here
 !
@@ -1308,27 +1305,18 @@
 
 !> -# Setup surface ground temperature and ground/air skin temperature
 !! if required.
-      do i = 1, IM
-        tskn(i) = Sfcprop%tsfc(i)
-        tsfg(i) = Sfcprop%tsfc(i)
 
-        if(backward_bitw) then
-          if(Sfcprop%slmsk(i) == 1.) then   ! land
-            Sfcprop%lndfrac(i) = 1.
-            Sfcprop%ocnfrac(i) = 0.
-            Sfcprop%lakfrac(i) = 0.
-          else ! ocean or lake or ice
-            Sfcprop%lndfrac(i) = 0.
-            Sfcprop%ocnfrac(i) = 1.
-            Sfcprop%lakfrac(i) = 0.
-          end if
-        end if
-
-        idry(i) = 0
-        iwet(i) = 0
-        if(Sfcprop%lndfrac(i) > 0.) idry(i) = 1
-        if(Sfcprop%ocnfrac(i) > 0. .or. Sfcprop%lakfrac(i) > 0.) iwet(i) = 1
-      enddo
+      if ( itsfc == 0 ) then            ! use same sfc skin-air/ground temp
+        do i = 1, IM
+          tskn(i) = Sfcprop%tsfc(i)
+          tsfg(i) = Sfcprop%tsfc(i)
+        enddo
+      else                              ! use diff sfc skin-air/ground temp
+        do i = 1, IM
+          tskn(i) = Sfcprop%tsfc(i)
+          tsfg(i) = Sfcprop%tsfc(i)
+        enddo
+      endif
 
 !> -# Prepare atmospheric profiles for radiation input.
 !
@@ -1812,16 +1800,9 @@
 !>  - Call module_radiation_surface::setalb() to setup surface albedo.
 !!  for SW radiation.
 
-! NOTE: First Sfcprop%zorl is for zorl_land, second is for sea ice
-!   This will matter once fractional grid is fully implemented for
-!   coupled FV3
-        call setalb (iwet,idry,                                   &
-                     Sfcprop%snowd, Sfcprop%sncovr,               &    !  ---  inputs:
-                     Sfcprop%snoalb, Sfcprop%zorl, Sfcprop%zorl,  &
-                     Radtend%coszen, Grid%xlon, Grid%xlat,        &
-                     tsfg, tsfa, Sfcprop%hprim,                   &
-                     Sfcprop%lndfrac, Sfcprop%ocnfrac,            & 
-                     Sfcprop%lakfrac, Sfcprop%alvsf,              &
+        call setalb (Sfcprop%slmsk, Sfcprop%snowd, Sfcprop%sncovr,&    !  ---  inputs:
+                     Sfcprop%snoalb, Sfcprop%zorl, Radtend%coszen,&
+                     tsfg, tsfa, Sfcprop%hprim, Sfcprop%alvsf,    &
                      Sfcprop%alnsf, Sfcprop%alvwf, Sfcprop%alnwf, &
                      Sfcprop%facsf, Sfcprop%facwf, Sfcprop%fice,  &
                      Sfcprop%tisfc, IM,                           &
@@ -1933,15 +1914,10 @@
 !>  - Call module_radiation_surface::setemis(),to setup surface
 !! emissivity for LW radiation.
 
-! For coupled FV3, eventually the first zorl will be land,
-!   and the second zorl will be ice
-        call setemis (Grid%xlon, Grid%xlat, iwet, idry,            &
-                      Sfcprop%ocnfrac,Sfcprop%lndfrac,             &
-                      Sfcprop%lakfrac,                             &        !  ---  inputs
-                      Sfcprop%snowd, Sfcprop%sncovr,               &
-                      Sfcprop%zorl, Sfcprop%zorl, Sfcprop%fice,    &
+        call setemis (Grid%xlon, Grid%xlat, Sfcprop%slmsk,         &        !  ---  inputs
+                      Sfcprop%snowd, Sfcprop%sncovr, Sfcprop%zorl, &
                       tsfg, tsfa, Sfcprop%hprim, IM,               & 
-                      Radtend%semis)                                        !  ---  outputs
+                      Radtend%semis)                                              !  ---  outputs
 
 !>  - Call module_radlw_main::lwrad(), to compute LW heating rates and
 !!    fluxes.

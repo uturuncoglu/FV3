@@ -403,7 +403,6 @@ module module_physics_driver
 
 
   public GFS_physics_driver, dgamln, cdfgam, cdfnor
-  logical :: backward_bitw = .true.	! for backward bitwise identity
 
   CONTAINS
 !*******************************************************************************************
@@ -849,18 +848,6 @@ module module_physics_driver
         else
           frland(i) = 0.
         endif
-
-        if(backward_bitw) then ! use slmsk to get bitwise identical results
-          if(Sfcprop%slmsk(i) == 1.) then   ! land
-            Sfcprop%lndfrac(i) = 1.
-            Sfcprop%ocnfrac(i) = 0.
-            Sfcprop%lakfrac(i) = 0.
-          else ! ocean or lake or ice
-            Sfcprop%lndfrac(i) = 0.
-            Sfcprop%ocnfrac(i) = 1.
-            Sfcprop%lakfrac(i) = 0.
-          end if
-        end if
 
         idry(i) = 0
         iwet(i) = 0

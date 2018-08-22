@@ -57,8 +57,8 @@ module FV3GFS_io_mod
 #endif
 
   !--- GFDL filenames
-  character(len=32)  :: fn_oro = 'oro_data.nc'
-  character(len=32)  :: fn_srf = 'sfc_data.nc'
+  character(len=32)  :: fn_oro
+  character(len=32)  :: fn_srf
   character(len=32)  :: fn_phy = 'phy_data.nc'
 
   !--- GFDL FMS netcdf restart data types
@@ -372,6 +372,14 @@ module FV3GFS_io_mod
     logical :: mand
     real(kind=kind_phys) :: rsnow
     
+!ssun if (Model%cplflx) then
+!ssun   fn_oro = 'oro_data_cpl.nc'
+!ssun   fn_srf = 'sfc_data_cpl.nc'
+!ssun else
+        fn_oro = 'oro_data.nc'
+        fn_srf = 'sfc_data.nc'
+!ssun endif
+
     nvar_o2  = 20
     nvar_s2m = 32
     nvar_s2o = 18
@@ -409,17 +417,21 @@ module FV3GFS_io_mod
       oro_name2(15) = 'elvmax'     ! hprime(ix,14)
       oro_name2(16) = 'orog_filt'  ! oro
       oro_name2(17) = 'orog_raw'   ! oro_uf
-      oro_name2(18) = 'ocean_frac' ! ocean fraction [0:1]
-      oro_name2(19) = 'lake_frac'  !  lake fraction [0:1]
-      oro_name2(20) = 'lake_depth' !  lake depth(m)
+    if (backward_bitw) then ! to achive bitwise identical results
+      oro_name2(18) = 'slmsk'      ! nint of land fraction [0:1]
+    else
+      oro_name2(18) = 'land_frac'  ! land fraction [0:1]
+    end if
+      oro_name2(19) = 'lake_frac'  ! lake fraction [0:1]
+      oro_name2(20) = 'lake_depth' ! lake depth(m)
       !--- register the 2D fields
-     if (.not. backward_bitw) then
-      do num = 1,nvar_o2
+     if (backward_bitw) then ! to achive bitwise identical results
+      do num = 1,nvar_o2-2
         var2_p => oro_var2(:,:,num)
         id_restart = register_restart_field(Oro_restart, fn_oro, oro_name2(num), var2_p, domain=fv_domain)
       enddo
-     else    ! to achive bitwise identical results
-      do num = 1,nvar_o2-3
+     else    
+      do num = 1,nvar_o2
         var2_p => oro_var2(:,:,num)
         id_restart = register_restart_field(Oro_restart, fn_oro, oro_name2(num), var2_p, domain=fv_domain)
       enddo
@@ -438,7 +450,7 @@ module FV3GFS_io_mod
         i = Atm_block%index(nb)%ii(ix) - isc + 1
         j = Atm_block%index(nb)%jj(ix) - jsc + 1
         !--- stddev
-        Sfcprop(nb)%hprim(ix)      = oro_var2(i,j,1)
+        Sfcprop(nb)%hprim(ix)     = oro_var2(i,j,1)
         !--- hprime(1:14)
         Sfcprop(nb)%hprime(ix,1)  = oro_var2(i,j,2)
         Sfcprop(nb)%hprime(ix,2)  = oro_var2(i,j,3)
@@ -458,16 +470,25 @@ module FV3GFS_io_mod
         Sfcprop(nb)%oro(ix)       = oro_var2(i,j,16)
         !--- oro_uf
         Sfcprop(nb)%oro_uf(ix)    = oro_var2(i,j,17)
+        Sfcprop(nb)%slmsk(ix)     = oro_var2(i,j,18)
 
-       if (.not. backward_bitw) then
-        if (oro_var2(i,j,18) > 0.) oro_var2(i,j,19) = 0. !ocean/lake don't coexist; if they do, ocean mask rules
-        Sfcprop(nb)%ocnfrac(ix)  = oro_var2(i,j,18)                             !ocean frac [0:1]
-        Sfcprop(nb)%lakfrac(ix)  = oro_var2(i,j,19)                             ! lake frac [0:1]
-        Sfcprop(nb)%lndfrac(ix)  = 1.0 - max(oro_var2(i,j,18),oro_var2(i,j,19)) ! land frac [0:1]
+       if (backward_bitw) then
+          if(Sfcprop(nb)%slmsk(ix) == 1.) then   ! land
+            Sfcprop(nb)%ocnfrac(ix)  = 0.
+            Sfcprop(nb)%lakfrac(ix)  = 0.
+            Sfcprop(nb)%lndfrac(ix)  = 1.
+          else ! ocean or lake or ice
+            Sfcprop(nb)%ocnfrac(ix)  = 1.
+            Sfcprop(nb)%lakfrac(ix)  = 0.
+            Sfcprop(nb)%lndfrac(ix)  = 0.
+          end if
        else
-        Sfcprop(nb)%ocnfrac(ix)  = 0.	! unknown
-        Sfcprop(nb)%lakfrac(ix)  = 0.	! unknown
-        Sfcprop(nb)%lndfrac(ix)  = 0.	! unknown
+        if (1.-oro_var2(i,j,18) > 0. .and. oro_var2(i,j,19) > 0. ) then
+!         print *,"warning: ocean/lake cannot coexist: setting lake frac to zero"
+          oro_var2(i,j,19) = 0. !ocean/lake cannot coexist; if they do, ocean mask rules
+        end if
+        Sfcprop(nb)%ocnfrac(ix)  = 1.-oro_var2(i,j,18)      !LHS:ocean frac [0:1]
+        Sfcprop(nb)%lndfrac(ix)  = 1.0 - max(1.-oro_var2(i,j,18),oro_var2(i,j,19)) !LHS: land frac [0:1]
        end if
       enddo
     enddo

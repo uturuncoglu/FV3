@@ -88,7 +88,6 @@
      &                              kind_phys
       use physcons,          only : con_t0c, con_ttp, con_pi, con_tice
       use module_iounitdef,  only : NIRADSF
-      use mdul_sfc_sice,     only: cimin
 !
       implicit   none
 !
@@ -119,7 +118,6 @@
       integer :: iemslw = 0
 !
       public  sfc_init, setalb, setemis, gmln, cdfbet, ppfbet
-      logical :: backward_bitw = .true.	! for backward bitwise identity
 
 ! =================
       contains
@@ -307,13 +305,8 @@
 !!\section general General Algorithm
 !! @{
 !-----------------------------------
-! For now, "zorlf_lnd" and "zorlf_ice" are identical
-! That may changed for coupled FV3
       subroutine setalb                                                 &
-     &     ( iwet, idry,                                                &
-     &       snowf,sncovr,snoalb,zorlf_lnd,zorlf_ice,                   &
-     &       coszf,xlon,xlat,tsknf,tairf,hprif,                         &
-     &       frac_lnd, frac_ocn, frac_lak,                              & !  ---  inputs:
+     &     ( slmsk,snowf,sncovr,snoalb,zorlf,coszf,tsknf,tairf,hprif,   & !  ---  inputs:
      &       alvsf,alnsf,alvwf,alnwf,facsf,facwf,fice,tisfc,            &
      &       IMAX,                                                      &
      &       albPpert, pertalb,                                         & ! sfc-perts, mgehne
@@ -382,12 +375,8 @@
 !  ---  inputs
       integer, intent(in) :: IMAX
 
-      integer, dimension(IMAX), intent(in) :: iwet, idry
-
       real (kind=kind_phys), dimension(:), intent(in) ::                &
-     &       snowf, zorlf_lnd, zorlf_ice, coszf, xlon, xlat,            &
-     &       tsknf, tairf, hprif,                                       &
-     &       frac_lnd, frac_ocn, frac_lak,                              &
+     &       slmsk, snowf, zorlf, coszf, tsknf, tairf, hprif,           &
      &       alvsf, alnsf, alvwf, alnwf, facsf, facwf, fice, tisfc,     &
      &       sncovr, snoalb, albPpert                                     ! sfc-perts, mgehne
       real (kind=kind_phys), dimension(5), intent(in) :: pertalb          ! sfc-perts, mgehne
@@ -405,49 +394,31 @@
 
       real (kind=kind_phys) ffw, dtgd
 
-      real (kind=kind_phys), dimension(IMAX) :: zorlf
-
-      real (kind=kind_phys) :: fsno0_lnd, fsno0_ice, fsno_lnd, fsno_ice &
-     &,     argh_lnd, argh_ice, fsno1_lnd, fsno1_ice                    &
-     &,     asnvb_lnd, asnvb_ice, asnnb_lnd, asnnb_ice                  &
-     &,     asnvd_lnd, asnvd_ice, asnnd_lnd, asnnd_ice
-
       integer :: i, k, kk, iflag
 
 !
 !===> ...  begin here
 !
 
-! ssun: is this the problem?
-        asnvb_ice = f_zero
-        asnnb_ice = f_zero
-        asnvd_ice = f_zero
-        asnnd_ice = f_zero
 !> -# If use climatological albedo scheme:
       if ( ialbflg == 0 ) then   ! use climatological albedo scheme
 
         do i = 1, IMAX
-!ssun         asnvb_ice = f_zero
-!ssun         asnnb_ice = f_zero
-!ssun         asnvd_ice = f_zero
-!ssun         asnnd_ice = f_zero
 
-! BWG comment out (move down), 14 June 2018
-!!>    - Modified snow albedo scheme - units convert to m (originally
-!!!      snowf in mm; zorlf in cm)
-!
-!         asnow = 0.02*snowf(i)
-!         argh  = min(0.50, max(.025, 0.01*zorlf(i)))
-!         hrgh  = min(f_one, max(0.20, 1.0577-1.1538e-3*hprif(i) ) )
-!         fsno0 = asnow / (argh + asnow) * hrgh
-!         if (nint(slmsk(i))==0 .and. tsknf(i)>con_tice) fsno0 = f_zero
-!         fsno1 = f_one - fsno0
-!         flnd0 = min(f_one, facsf(i)+facwf(i))
-!         fsea0 = max(f_zero, f_one-flnd0)
-!         fsno  = fsno0
-!         fsea  = fsea0 * fsno1
-!         flnd  = flnd0 * fsno1
-! End of BWG comment out (move down), 14 June 2018
+!>    - Modified snow albedo scheme - units convert to m (originally
+!!      snowf in mm; zorlf in cm)
+
+         asnow = 0.02*snowf(i)
+         argh  = min(0.50, max(.025, 0.01*zorlf(i)))
+         hrgh  = min(f_one, max(0.20, 1.0577-1.1538e-3*hprif(i) ) )
+         fsno0 = asnow / (argh + asnow) * hrgh
+         if (nint(slmsk(i))==0 .and. tsknf(i)>con_tice) fsno0 = f_zero
+         fsno1 = f_one - fsno0
+         flnd0 = min(f_one, facsf(i)+facwf(i))
+         fsea0 = max(f_zero, f_one-flnd0)
+         fsno  = fsno0
+         fsea  = fsea0 * fsno1
+         flnd  = flnd0 * fsno1
 
 !>    - Calculate diffused sea surface albedo
 
@@ -465,7 +436,7 @@
 
 !>    - Calculate diffused snow albedo.
 
-         if (fice(i) >= cimin) then
+         if (nint(slmsk(i)) == 2) then
             ffw   = f_one - fice(i)
             if (ffw < f_one) then
                dtgd = max(f_zero, min(5.0, (con_ttp-tisfc(i)) ))
@@ -475,31 +446,24 @@
             endif
 
             b3   = 0.06 * ffw
+            asnvd = (0.70 + b1) * fice(i) + b3
+            asnnd = (0.60 + b1) * fice(i) + b3
             asevd = 0.70        * fice(i) + b3
             asend = 0.60        * fice(i) + b3
-
-            asnvd_ice = (0.70 + b1) * fice(i) + b3
-            asnnd_ice = (0.60 + b1) * fice(i) + b3
+         else
+            asnvd = 0.90
+            asnnd = 0.75
          endif
-
-         asnvd_lnd = 0.90
-         asnnd_lnd = 0.75
 
 !>    - Calculate direct snow albedo.
 
          if (coszf(i) < 0.5) then
             csnow = 0.5 * (3.0 / (f_one+4.0*coszf(i)) - f_one)
-            if (fice(i) >= cimin) then
-              asnvb_ice = min( 0.98, asnvd_ice+(1.0-asnvd_ice)*csnow )
-              asnnb_ice = min( 0.98, asnnd_ice+(1.0-asnnd_ice)*csnow )
-            endif
-            asnvb_lnd = min( 0.98, asnvd_lnd+(1.0-asnvd_lnd)*csnow )
-            asnnb_lnd = min( 0.98, asnnd_lnd+(1.0-asnnd_lnd)*csnow )
+            asnvb = min( 0.98, asnvd+(1.0-asnvd)*csnow )
+            asnnb = min( 0.98, asnnd+(1.0-asnnd)*csnow )
          else
-            asnvb_ice = asnvd_ice
-            asnnb_ice = asnnd_ice
-            asnvb_lnd = asnvd_lnd
-            asnnb_lnd = asnnd_lnd
+            asnvb = asnvd
+            asnnb = asnnd
          endif
 
 !>    - Calculate direct sea surface albedo.
@@ -526,79 +490,16 @@
             asenb = asend
          endif
 
-
-! BWG move down, 14 June 2018
-!>    - Modified snow albedo scheme - units convert to m (originally
-!!      snowf in mm; zorlf in cm)
-
-         asnow = 0.02*snowf(i)
-         hrgh  = min(f_one, max(0.20, 1.0577-1.1538e-3*hprif(i) ) )
-         argh_lnd = min(0.50, max(.025, 0.01*zorlf_lnd(i)))
-         fsno0_lnd = asnow / (argh_lnd + asnow) * hrgh
-         if (fice(i) >= cimin) then
-           argh_ice = min(0.50, max(.025, 0.01*zorlf_ice(i)))
-           fsno0_ice = asnow / (argh_lnd + asnow) * hrgh
-         else ! No ice
-           fsno0_ice = f_zero
-         endif
-
-         if (idry(i) == 0 .and. fice(i) < cimin
-     &       .and. tsknf(i)>con_tice) fsno0_lnd = f_zero
-
-! Composite everything here
-      if (backward_bitw) then ! Backwards compatible
-         if (fice(i) >= cimin ) then
-            fsno0    = fsno0_ice
-            fsno_ice = fsno0_ice
-
-            fsno_lnd = f_zero
-           asnvd_lnd = f_zero
-           asnnd_lnd = f_zero
-           asnvb_lnd = f_zero
-           asnnb_lnd = f_zero
-         else
-            fsno0    = fsno0_lnd
-            fsno_lnd = fsno0_lnd
-
-            fsno_ice = f_zero
-           asnvd_ice = f_zero
-           asnnd_ice = f_zero
-           asnvb_ice = f_zero
-           asnnb_ice = f_zero
-         endif
-
-         fsno1 = f_one - fsno0
-       endif  ! Backwards compatible
-
-! Temporary flag here because 0. < (facsf + facwf) < 1.
-! NOTE: Separate from above "if" because short-term goal is
-!   to delete THIS "if" (once facsf+facwf issue is resolved)
-         if (backward_bitw) then ! Uncoupled: Keep bitwise identical (delete later)
-           flnd0 = min(f_one, facsf(i)+facwf(i))  ! Needs to be fixed!!!
-         else                    ! Eventually use for all cases
-           flnd0 = min(f_one, frac_lnd(i))
-         endif
-
-         fsea0 = max(f_zero, f_one-flnd0)
-         fsno  = fsno0
-         fsea  = fsea0 * fsno1
-         flnd  = flnd0 * fsno1
-! End of BWG move down, 14 June 2018
-
          a1   = alvsf(i) * facsf(i)
          b1   = alvwf(i) * facwf(i)
          a2   = alnsf(i) * facsf(i)
          b2   = alnwf(i) * facwf(i)
          ab1bm = a1*rfcs + b1*rfcw
          ab2bm = a2*rfcs + b2*rfcw
-         sfcalb(i,1) = min(0.99, ab2bm) *flnd + asenb*fsea              &
-     &               + asnnb_ice*fsno_ice + asnnb_lnd*fsno_lnd
-         sfcalb(i,2) = (a2 + b2) * 0.96 *flnd + asend*fsea              &
-     &               + asnnd_ice*fsno_ice + asnnd_lnd*fsno_lnd
-         sfcalb(i,3) = min(0.99, ab1bm) *flnd + asevb*fsea              &
-     &               + asnvb_ice*fsno_ice + asnvb_lnd*fsno_lnd
-         sfcalb(i,4) = (a1 + b1) * 0.96 *flnd + asevd*fsea              &
-     &               + asnvd_ice*fsno_ice + asnvd_lnd*fsno_lnd
+         sfcalb(i,1) = min(0.99, ab2bm) *flnd + asenb*fsea + asnnb*fsno
+         sfcalb(i,2) = (a2 + b2) * 0.96 *flnd + asend*fsea + asnnd*fsno
+         sfcalb(i,3) = min(0.99, ab1bm) *flnd + asevb*fsea + asnvb*fsno
+         sfcalb(i,4) = (a1 + b1) * 0.96 *flnd + asevd*fsea + asnvd*fsno
 
         enddo    ! end_do_i_loop
 
@@ -606,28 +507,27 @@
       else                      
 
         do i = 1, IMAX
-! BWG comment out (move down), 14 June 2018
-!!>    - Calculate snow cover input directly for land model, no 
-!!!      conversion needed.
-!
-!         fsno0 = sncovr(i)
-!
-!         if (nint(slmsk(i))==0 .and. tsknf(i)>con_tice) fsno0 = f_zero
-!
-!         if (nint(slmsk(i)) == 2) then
-!           asnow = 0.02*snowf(i)
-!           argh  = min(0.50, max(.025, 0.01*zorlf(i)))
-!           hrgh  = min(f_one, max(0.20, 1.0577-1.1538e-3*hprif(i) ) )
-!           fsno0 = asnow / (argh + asnow) * hrgh
-!         endif
-!
-!         fsno1 = f_one - fsno0
-!         flnd0 = min(f_one, facsf(i)+facwf(i))
-!         fsea0 = max(f_zero, f_one-flnd0)
-!         fsno  = fsno0
-!         fsea  = fsea0 * fsno1
-!         flnd  = flnd0 * fsno1
-! End of BWG comment out (move down), 14 June 2018
+
+!>    - Calculate snow cover input directly for land model, no 
+!!      conversion needed.
+
+         fsno0 = sncovr(i)
+
+         if (nint(slmsk(i))==0 .and. tsknf(i)>con_tice) fsno0 = f_zero
+
+         if (nint(slmsk(i)) == 2) then
+           asnow = 0.02*snowf(i)
+           argh  = min(0.50, max(.025, 0.01*zorlf(i)))
+           hrgh  = min(f_one, max(0.20, 1.0577-1.1538e-3*hprif(i) ) )
+           fsno0 = asnow / (argh + asnow) * hrgh
+         endif
+
+         fsno1 = f_one - fsno0
+         flnd0 = min(f_one, facsf(i)+facwf(i))
+         fsea0 = max(f_zero, f_one-flnd0)
+         fsno  = fsno0
+         fsea  = fsea0 * fsno1
+         flnd  = flnd0 * fsno1
 
 !>    - Calculate diffused sea surface albedo.
 
@@ -646,7 +546,7 @@
 !>    - Calculate diffused snow albedo, land area use input max snow 
 !!      albedo.
 
-         if (fice(i) >= cimin) then
+         if (nint(slmsk(i)) == 2) then
             ffw   = f_one - fice(i)
             if (ffw < f_one) then
                dtgd = max(f_zero, min(5.0, (con_ttp-tisfc(i)) ))
@@ -656,32 +556,30 @@
             endif
 
             b3   = 0.06 * ffw
+            asnvd = (0.70 + b1) * fice(i) + b3
+            asnnd = (0.60 + b1) * fice(i) + b3
             asevd = 0.70        * fice(i) + b3
             asend = 0.60        * fice(i) + b3
-
-            asnvd_ice = (0.70 + b1) * fice(i) + b3
-            asnnd_ice = (0.60 + b1) * fice(i) + b3
-          endif
-
-          asnvd_lnd = snoalb(i)
-          asnnd_lnd = snoalb(i)
+         else
+            asnvd = snoalb(i)
+            asnnd = snoalb(i)
+         endif
 
 !>    - Calculate direct snow albedo.
 
-         if (fice(i) >= cimin) then
+         if (nint(slmsk(i)) == 2) then
            if (coszf(i) < 0.5) then
               csnow = 0.5 * (3.0 / (f_one+4.0*coszf(i)) - f_one)
-              asnvb_ice = min( 0.98, asnvd_ice+(f_one-asnvd_ice)*csnow )
-              asnnb_ice = min( 0.98, asnnd_ice+(f_one-asnnd_ice)*csnow )
+              asnvb = min( 0.98, asnvd+(f_one-asnvd)*csnow )
+              asnnb = min( 0.98, asnnd+(f_one-asnnd)*csnow )
            else
-             asnvb_ice = asnvd_ice
-             asnnb_ice = asnnd_ice
+             asnvb = asnvd
+             asnnb = asnnd
            endif
-
-         endif 
-
-         asnvb_lnd = snoalb(i)
-         asnnb_lnd = snoalb(i)
+         else
+           asnvb = snoalb(i)
+           asnnb = snoalb(i)
+         endif
 
 !>    - Calculate direct sea surface albedo, use fanglin's zenith angle
 !!      treatment.
@@ -707,90 +605,12 @@
             asenb = asend
          endif
 
-! BWG, 14 June 2018: Move down all stuff related to compositing here
-!>    - Calculate snow cover input directly for land model, no 
-!!      conversion needed.
-         fsno0_ice = f_zero
-         fsno0_lnd = sncovr(i)
-
-         if (idry(i) == 0 .and. fice(i) < cimin
-     &       .and. tsknf(i)>con_tice) fsno0_lnd = f_zero
-
-         if (fice(i) >= cimin) then
-           asnow = 0.02*snowf(i)
-           argh  = min(0.50, max(.025, 0.01*zorlf_ice(i)))
-           hrgh  = min(f_one, max(0.20, 1.0577-1.1538e-3*hprif(i) ) )
-           fsno0_ice = asnow / (argh + asnow) * hrgh
-         endif
-
-! BWG: Composite everything here
-       if (backward_bitw) then  ! Backwards compatible
-         if (fice(i) >= cimin) then
-           fsno0 = fsno0_ice   !
-           fsno_ice = fsno0_ice
-
-           fsno_lnd = f_zero
-         else
-           fsno0 = fsno0_lnd   !
-           fsno_lnd = fsno0_lnd
-
-           fsno_ice = f_zero
-         endif
-
-         fsno1 = f_one - fsno0   !
-       endif
-
-! BWG: This is where we need to fix!!!
-! Temporary flag for bitwise identical (uncoupled)
-! NOTE: Separate "if" than "if" above because the "if"
-!   below will be removed once the facsf+facwf issue
-!   is resolved (hopefully short term)
-         if (backward_bitw) then ! Use for uncoupled, remove when sum = 0 or 1
-           flnd0 = min(f_one, facsf(i)+facwf(i))
-         else                    ! Eventually use this for all
-           flnd0 = min(f_one, frac_lnd(i))
-         endif
-
-         fsea0 = max(f_zero, f_one-flnd0)
-         fsno  = fsno0   !
-! BWG, 14 June 2018: Once we get facsf(i) + facwf(i)
-!    to work correctly as a fractional coastline
-!    (or get a different variable for fractional coast),
-!    use these next 2 lines that are currently commented out
-!    And then comment out third and fourth lines below
-         if (backward_bitw) then ! Uncoupled, eventually remove
-           fsea  = fsea0 * fsno1
-           flnd  = flnd0 * fsno1
-         else                    ! Eventually use this for all
-           fsea  = fsea0 * (f_one - fsno_ice)  !fsea0 * fsno1
-           flnd  = flnd0 * (f_one - fsno_lnd)  !flnd0 * fsno1
-         endif
-! End of BWG move down, 14 June 2018
-
          ab1bm = min(0.99, alnsf(i)*rfcs)
          ab2bm = min(0.99, alvsf(i)*rfcs)
-         sfcalb(i,1) = ab1bm   *flnd + asenb*fsea                       &
-     &               + asnnb_ice*fsno_ice + asnnb_lnd*fsno_lnd
-         sfcalb(i,2) = alnwf(i)     *flnd + asend*fsea                  &
-     &               + asnnd_ice*fsno_ice + asnnd_lnd*fsno_lnd
-         sfcalb(i,3) = ab2bm   *flnd + asevb*fsea                       &
-     &               + asnvb_ice*fsno_ice + asnvb_lnd*fsno_lnd
-         sfcalb(i,4) = alvwf(i)     *flnd + asevd*fsea                  &
-     &               + asnvd_ice*fsno_ice + asnvd_lnd*fsno_lnd
-
-!! BWG add stuff for test point, 14 June 2018
-!         if (abs(xlat(i)-1.307) + abs(xlon(i)-2.798)<1.e-2) then
-!          print 97,'Testing rad: lat,lon=',xlat(i),xlon(i),             &
-!     &    'facsf',facsf(i),'facwf',facwf(i),'fice',fice(i),             &
-!     &    'snowf',snowf(i),'zorlf',zorlf_ice(i),'tsknf',tsknf(i),       &
-!     &    'fsno0_ice',fsno0_ice,'fsno0_lnd',fsno0_lnd,'fsno0',fsno0,    &
-!     &    'fsno_ice',fsno_ice,'fsno_lnd',fsno_lnd,'fsno1',fsno1,        &
-!     &    'flnd0',flnd0,'fsea0',fsea0,'fsno',fsno,'flnd',flnd,          &
-!     &    'fsea',fsea,'sfcalb(1)',sfcalb(i,1),'sfcalb(2)',sfcalb(i,2),  &
-!     &    'sfcalb(3)',sfcalb(i,3),'sfcalb(4)',sfcalb(i,4)
-!  97      format (a,2f9.5/(3(a10,'=',es11.4)))
-!         endif
-!! End of BWG add stuff for test point, 14 June 2018
+         sfcalb(i,1) = ab1bm   *flnd + asenb*fsea + asnnb*fsno
+         sfcalb(i,2) = alnwf(i)     *flnd + asend*fsea + asnnd*fsno
+         sfcalb(i,3) = ab2bm   *flnd + asevb*fsea + asnvb*fsno
+         sfcalb(i,4) = alvwf(i)     *flnd + asevd*fsea + asnvd*fsno
 
         enddo    ! end_do_i_loop
 
@@ -842,9 +662,8 @@
 !> @{
 !-----------------------------------
       subroutine setemis                                                &
-     &     ( xlon,xlat,iwet,idry,frac_ocn,frac_lnd,frac_lak,            &
-     &       snowf,sncovr,zorlf_lnd,zorlf_ice,fice,                     &  !  ---  inputs:
-     &       tsknf,tairf,hprif,IMAX,                                    &
+     &     ( xlon,xlat,slmsk,snowf,sncovr,zorlf,tsknf,tairf,hprif,      &  !  ---  inputs:
+     &       IMAX,                                                      &
      &       sfcemis                                                    &  !  ---  outputs:
      &     )
 
@@ -892,12 +711,8 @@
 !  ---  inputs
       integer, intent(in) :: IMAX
 
-      integer, dimension(IMAX), intent(in) :: iwet, idry
-      real (kind=kind_phys), dimension(:), intent(in) ::                &
-     &        frac_ocn, frac_lnd, frac_lak
-      real (kind=kind_phys), dimension(:), intent(in) ::                &
-     &        xlon,xlat, snowf,sncovr, zorlf_lnd,zorlf_ice,fice,        &
-     &        tsknf, tairf, hprif
+      real (kind=kind_phys), dimension(:), intent(in) ::                & 
+     &       xlon,xlat, slmsk, snowf,sncovr, zorlf, tsknf, tairf, hprif
 
 !  ---  outputs
       real (kind=kind_phys), dimension(:), intent(out) :: sfcemis
@@ -907,10 +722,6 @@
 
       real (kind=kind_phys) :: dltg, hdlt, tmp1, tmp2,                  &
      &      asnow, argh, hrgh, fsno, fsno0, fsno1
-
-      real (kind=kind_phys) :: argh_lnd,argh_ice, fsno_lnd,fsno_ice,    &
-     &      fsno0_lnd,fsno0_ice, sfcemis_ocn,sfcemis_lnd,sfcemis_ice,   &
-     &      wOcn, wLnd, wIce
 
 !  ---  reference emiss value for diff surface emiss index
 !       1-open water, 2-grass/shrub land, 3-bare soil, tundra,
@@ -939,48 +750,15 @@
 
         lab_do_IMAX : do i = 1, IMAX
 
-! Initialize emissivity components to 0, and assign weights for now based on slmsk
-          sfcemis_ocn = f_zero
-          sfcemis_lnd = f_zero
-          sfcemis_ice = f_zero
+          if ( nint(slmsk(i)) == 0 ) then          ! sea point
 
-! BWG note, 26 June 2018: Eventually want to do next 3 lines
-! Instead of the if statements assigning weights of 0 and 1
-          if ( .not. backward_bitw) then
-            wOcn = (f_one-fice(i))*(frac_ocn(i)+frac_lak(i))
-            wLnd = (f_one-fice(i))*(frac_lnd(i))           
-            wIce = fice(i)
+            sfcemis(i) = emsref(1)
 
-          else  ! Uncoupled... eventually remove
+          else if ( nint(slmsk(i)) == 2 ) then     ! sea-ice
 
-            if (fice(i) >= cimin) then
-              wOcn = f_zero
-              wLnd = f_zero
-              wIce = f_one
-            else
-              if    (iwet(i) == 1 .and. idry(i) == 0) then
-                 wOcn = f_one
-                 wLnd = f_zero
-                 wIce = f_zero
-              elseif(iwet(i) == 0 .and. idry(i) == 1) then
-                 wOcn = f_zero
-                 wLnd = f_one
-                 wIce = f_zero
-              endif
-            endif
+            sfcemis(i) = emsref(7)
 
-          endif ! If statement for backwards compatible
-! End of BWG note, 26 June 2018
-
-          if ( iwet(i) == 1 .and. fice(i) < f_one ) then  ! Some open ocean
-            sfcemis_ocn = emsref(1)
-          endif
-
-          if ( fice(i) >= cimin) then ! Some ice
-            sfcemis_ice = emsref(7)
-          endif
-
-          if( idry(i) == 1 ) then
+          else                                     ! land
 
 !  ---  map grid in longitude direction
             i2 = 1
@@ -1014,69 +792,31 @@
 
             idx = max( 2, idxems(i2,j2) )
             if ( idx >= 7 ) idx = 2
-            sfcemis_lnd = emsref(idx)
+            sfcemis(i) = emsref(idx)
+
           endif   ! end if_slmsk_block
 
 !> -# Check for snow covered area.
 
-! BWG modify, 25 June 2018
-!          if ( ialbflg==1 .and. nint(slmsk(i))==1 ) then ! input land area snow cover
-!
-!            fsno0 = sncovr(i)
-!            fsno1 = f_one - fsno0
-!            sfcemis(i) = sfcemis(i)*fsno1 + emsref(8)*fsno0
-!
-!          else                                           ! compute snow cover from snow depth
-!            if ( snowf(i) > f_zero ) then
-!              asnow = 0.02*snowf(i)
-!              argh  = min(0.50, max(.025, 0.01*zorlf(i)))
-!              hrgh  = min(f_one, max(0.20, 1.0577-1.1538e-3*hprif(i) ) )
-!              fsno0 = asnow / (argh + asnow) * hrgh
-!              if (nint(slmsk(i)) == 0 .and. tsknf(i) > 271.2)           &
-!     &                               fsno0=f_zero
-!              fsno1 = f_one - fsno0
-!              sfcemis(i) = sfcemis(i)*fsno1 + emsref(8)*fsno0
-!            endif
-!
-!          endif                                          ! end if_ialbflg
+          if ( ialbflg==1 .and. nint(slmsk(i))==1 ) then ! input land area snow cover
 
-          asnow = 0.02*snowf(i)
-          hrgh = min(f_one, max(0.20, 1.0577-1.1538e-3*hprif(i) ) )
+            fsno0 = sncovr(i)
+            fsno1 = f_one - fsno0
+            sfcemis(i) = sfcemis(i)*fsno1 + emsref(8)*fsno0
 
-          if ( fice(i) >= cimin ) then ! Some ice
-            argh_ice = min(0.50, max(.025, 0.01*zorlf_ice(i)))
-            fsno0_ice = asnow / (argh_ice + asnow) * hrgh
-            sfcemis_ice = sfcemis_ice*(f_one - fsno0_ice)               &
-     &                    + emsref(8)*fsno0_ice
-          endif ! Computing emissivity over ice
-
-          if (idry(i) == 1) then  ! Some land
-            if (ialbflg == 1) then ! input land area snow cover
-              fsno0_lnd = sncovr(i)
-            else  ! ialbflg == 0 compute snow cover from snow depth
-              argh_lnd = min(0.50, max(.025, 0.01*zorlf_lnd(i)))
-              fsno0_lnd = asnow / (argh_lnd + asnow) * hrgh
+          else                                           ! compute snow cover from snow depth
+            if ( snowf(i) > f_zero ) then
+              asnow = 0.02*snowf(i)
+              argh  = min(0.50, max(.025, 0.01*zorlf(i)))
+              hrgh  = min(f_one, max(0.20, 1.0577-1.1538e-3*hprif(i) ) )
+              fsno0 = asnow / (argh + asnow) * hrgh
+              if (nint(slmsk(i)) == 0 .and. tsknf(i) > 271.2)           &
+     &                               fsno0=f_zero
+              fsno1 = f_one - fsno0
+              sfcemis(i) = sfcemis(i)*fsno1 + emsref(8)*fsno0
             endif
-            sfcemis_lnd = sfcemis_lnd*(f_one - fsno0_lnd)               &
-     &                    + emsref(8)*fsno0_lnd
-          endif ! Computing emissivity over snowy land
 
-! Composite!
-         sfcemis(i)=wOcn*sfcemis_ocn+wLnd*sfcemis_lnd+wIce*sfcemis_ice
-
-
-!! BWG add stuff for test point, 25 June 2018
-!         if (abs(xlat(i)-1.307) + abs(xlon(i)-2.798)<1.e-2) then
-!          print 97,'Testing emis: lat,lon=',xlat(i),xlon(i),            &
-!     &    'lndind',lndind,'ocnind',ocnind,'lakind',lakind,              &
-!     &    'mskLnd',sfcmsk(i,lndind),'mskOcn',sfcmsk(i,ocnind),          &
-!     &    'mskLak',sfcmsk(i,lakind),                                    &
-!     &    'wOcn',wOcn,'wLnd',wLnd,'wIce',wIce,                          &
-!     &    'emOcn',sfcemis_ocn,'emLnd',sfcemis_lnd,'emIce',sfcemis_ice,  &
-!     &    'emis',sfcemis(i)
-!  97      format (a,2f9.5/(6(a8,'=',i6))/(3(a10,'=',es11.4)))
-!         endif
-! End of BWG add stuff for test point, 25 June 2018
+          endif                                          ! end if_ialbflg
 
         enddo  lab_do_IMAX
 

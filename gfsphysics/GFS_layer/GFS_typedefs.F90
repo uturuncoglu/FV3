@@ -145,11 +145,11 @@ module GFS_typedefs
 
 !--- In (radiation and physics)
     real (kind=kind_phys), pointer :: slmsk  (:)   => null()  !< sea/land mask array (sea:0,land:1,sea-ice:2)
-                                                              !< [tsea in gbphys.f]
-    real (kind=kind_phys), pointer :: tsfc   (:)   => null()  !< surface temperature in k 
     real (kind=kind_phys), pointer :: ocnfrac(:)   => null()  !< ocean fraction [0:1]
     real (kind=kind_phys), pointer :: lndfrac(:)   => null()  !<  land fraction [0:1]
     real (kind=kind_phys), pointer :: lakfrac(:)   => null()  !<  lake fraction [0:1]
+    real (kind=kind_phys), pointer :: tsfc   (:)   => null()  !< surface temperature in k 
+                                                              !< [tsea in gbphys.f]
     real (kind=kind_phys), pointer :: tisfc  (:)   => null()  !< surface temperature over ice fraction 
     real (kind=kind_phys), pointer :: snowd  (:)   => null()  !< snow depth water equivalent in mm ; same as snwdph
     real (kind=kind_phys), pointer :: zorl   (:)   => null()  !< surface roughness in cm 
@@ -1076,6 +1076,9 @@ module GFS_typedefs
 
     !--- physics and radiation
     allocate (Sfcprop%slmsk  (IM))
+    allocate (Sfcprop%ocnfrac(IM))
+    allocate (Sfcprop%lndfrac(IM))
+    allocate (Sfcprop%lakfrac(IM))
     allocate (Sfcprop%tsfc   (IM))
     allocate (Sfcprop%tisfc  (IM))
     allocate (Sfcprop%snowd  (IM))
@@ -1083,11 +1086,11 @@ module GFS_typedefs
     allocate (Sfcprop%fice   (IM))
     allocate (Sfcprop%hprim  (IM))
     allocate (Sfcprop%hprime (IM,Model%nmtvr))
-    allocate (Sfcprop%ocnfrac(IM))
-    allocate (Sfcprop%lndfrac(IM))
-    allocate (Sfcprop%lakfrac(IM))
 
     Sfcprop%slmsk   = clear_val
+    Sfcprop%ocnfrac = clear_val
+    Sfcprop%lndfrac = clear_val
+    Sfcprop%lakfrac = clear_val
     Sfcprop%tsfc    = clear_val
     Sfcprop%tisfc   = clear_val
     Sfcprop%snowd   = clear_val
@@ -1095,9 +1098,6 @@ module GFS_typedefs
     Sfcprop%fice    = clear_val
     Sfcprop%hprim   = clear_val
     Sfcprop%hprime  = clear_val
-    Sfcprop%ocnfrac = clear_val
-    Sfcprop%lndfrac = clear_val
-    Sfcprop%lakfrac = clear_val
 
 !--- In (radiation only)
     allocate (Sfcprop%sncovr (IM))
