@@ -845,7 +845,7 @@ subroutine update_atmos_chemistry(state, rc)
   real(ESMF_KIND_R8), dimension(:,:,:,:), pointer :: q
 
   real(ESMF_KIND_R8), dimension(:,:), pointer :: hpbl, area, stype, rainc, &
-    uustar, rain, sfcdsw, slmsk, tsfc, shfsfc, snowd, vtype, vfrac, zorl
+    uustar, rain, sfcdsw, lndfrac, ocnfrac, tsfc, shfsfc, snowd, vtype, vfrac, zorl
 
   logical, parameter :: diag = .true.
 
@@ -972,7 +972,7 @@ subroutine update_atmos_chemistry(state, rc)
       if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, file=__FILE__, rcToReturn=rc)) return
 
-      call cplFieldGet(state,'inst_land_sea_mask', farrayPtr2d=slmsk, rc=localrc)
+      call cplFieldGet(state,'inst_land_sea_mask', farrayPtr2d=lndfrac, rc=localrc)
       if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, file=__FILE__, rcToReturn=rc)) return
 
@@ -1063,7 +1063,7 @@ subroutine update_atmos_chemistry(state, rc)
 !$OMP parallel do default (none) &
 !$OMP             shared  (nj, ni, Atm_block, IPD_Data, &
 !$OMP                      hpbl, area, stype, rainc, rain, uustar, sfcdsw, &
-!$OMP                      slmsk, snowd, tsfc, shfsfc, vtype, vfrac, zorl, slc) &
+!$OMP                      lndfrac, ocnfrac, snowd, tsfc, shfsfc, vtype, vfrac, zorl, slc) &
 !$OMP             private (j, jb, i, ib, nb, ix)
       do j = 1, nj
         jb = j + Atm_block%jsc - 1
@@ -1078,7 +1078,8 @@ subroutine update_atmos_chemistry(state, rc)
           rain(i,j)    = IPD_Data(nb)%Coupling%rain_cpl(ix)
           uustar(i,j)  = IPD_Data(nb)%Sfcprop%uustar(ix)
           sfcdsw(i,j)  = IPD_Data(nb)%Coupling%sfcdsw(ix)
-          slmsk(i,j)   = IPD_Data(nb)%Sfcprop%slmsk(ix)
+          lndfrac(i,j) = IPD_Data(nb)%Sfcprop%lndfrac(ix)
+          ocnfrac(i,j) = IPD_Data(nb)%Sfcprop%ocnfrac(ix)
           snowd(i,j)   = IPD_Data(nb)%Sfcprop%snowd(ix)
           tsfc(i,j)    = IPD_Data(nb)%Sfcprop%tsfc(ix)
           shfsfc(i,j)  = IPD_Data(nb)%Coupling%ushfsfci(ix)
@@ -1106,7 +1107,7 @@ subroutine update_atmos_chemistry(state, rc)
         write(6,'("update_atmos: rain - min/max/avg",3g16.6)') minval(rain), maxval(rain), sum(rain)/size(rain)
         write(6,'("update_atmos: shfsfc - min/max/avg",3g16.6)') minval(shfsfc), maxval(shfsfc), sum(shfsfc)/size(shfsfc)
         write(6,'("update_atmos: sfcdsw - min/max/avg",3g16.6)') minval(sfcdsw), maxval(sfcdsw), sum(sfcdsw)/size(sfcdsw)
-        write(6,'("update_atmos: slmsk - min/max/avg",3g16.6)') minval(slmsk), maxval(slmsk), sum(slmsk)/size(slmsk)
+        write(6,'("update_atmos: lndfrac - min/max/avg",3g16.6)') minval(lndfrac), maxval(lndfrac), sum(lndfrac)/size(lndfrac)
         write(6,'("update_atmos: snowd - min/max/avg",3g16.6)') minval(snowd), maxval(snowd), sum(snowd)/size(snowd)
         write(6,'("update_atmos: tsfc - min/max/avg",3g16.6)') minval(tsfc), maxval(tsfc), sum(tsfc)/size(tsfc)
         write(6,'("update_atmos: vtype - min/max/avg",3g16.6)') minval(vtype), maxval(vtype), sum(vtype)/size(vtype)
@@ -1291,13 +1292,11 @@ end subroutine atmos_data_type_chksum
             do i=isc,iec
               nb = Atm_block%blkno(i,j)
               ix = Atm_block%ixp(i,j)
-!             if (Sfcprop%slimskin(i,j) < 3.1 .and. Sfcprop%slimskin(i,j) > 2.9) then
 !if it is ocean or ice get sst from mediator
-               if (IPD_Data(nb)%Sfcprop%slmsk(ix) < 0.1 .or. IPD_Data(nb)%Sfcprop%slmsk(ix) > 1.9) then
-                  IPD_Data(nb)%Coupling%tseain_cpl(ix) = datar8(i,j)
-                 IPD_Data(nb)%Sfcprop%tsfc(ix) = datar8(i,j)
-               endif
-!             endif
+              if (IPD_Data(nb)%Sfcprop%ocnfrac(ix) > 0.) then
+                IPD_Data(nb)%Coupling%tseain_cpl(ix) = datar8(i,j)
+                IPD_Data(nb)%Sfcprop%tsfc(ix) = datar8(i,j)
+              endif
             enddo
             enddo
             if (mpp_pe() == mpp_root_pe() .and. debug)  print *,'get sst from mediator'
@@ -1314,15 +1313,14 @@ end subroutine atmos_data_type_chksum
             do i=isc,iec
               nb = Atm_block%blkno(i,j)
               ix = Atm_block%ixp(i,j)
-              IPD_Data(nb)%Coupling%ficein_cpl(ix) = datar8(i,j)
+              IPD_Data(nb)%Coupling%ficein_cpl(ix) = 0.
+              IPD_Data(nb)%Coupling%slimskin_cpl(ix) = 0.
 !if it is ocean or ice get sst from mediator
-              if (IPD_Data(nb)%Sfcprop%slmsk(ix) < 0.1 .or. IPD_Data(nb)%Sfcprop%slmsk(ix) > 1.9) then
-                if( datar8(i,j) > 0.15 .and. IPD_Data(nb)%Sfcprop%lakfrac(ix) == 0.) then
-                  IPD_Data(nb)%Sfcprop%fice(ix) = datar8(i,j)
-                  IPD_Data(nb)%Sfcprop%slmsk(ix) = 2.0
+              if (IPD_Data(nb)%Sfcprop%ocnfrac(ix) > 0.) then
+                if( datar8(i,j) >= 0.15 .and. IPD_Data(nb)%Sfcprop%ocnfrac(ix) > 0. ) then
+                  IPD_Data(nb)%Coupling%ficein_cpl(ix) = datar8(i,j)
+                  IPD_Data(nb)%Sfcprop%slmsk(ix) = 2.
                   IPD_Data(nb)%Coupling%slimskin_cpl(ix) = 4.
-                  else
-                  IPD_Data(nb)%Sfcprop%fice(ix) = 0.0
                 endif
               endif
             enddo
@@ -1340,9 +1338,9 @@ end subroutine atmos_data_type_chksum
             do i=isc,iec
               nb = Atm_block%blkno(i,j)
               ix = Atm_block%ixp(i,j)
-          if (IPD_Data(nb)%Sfcprop%slmsk(ix) < 0.1 .or. IPD_Data(nb)%Sfcprop%slmsk(ix) > 1.9) then
-              IPD_Data(nb)%Coupling%ulwsfcin_cpl(ix) = -datar8(i,j)
-          endif
+              if (IPD_Data(nb)%Sfcprop%ocnfrac(ix) > 0.) then
+                IPD_Data(nb)%Coupling%ulwsfcin_cpl(ix) = -datar8(i,j)
+              endif
             enddo
             enddo
             if (mpp_pe() == mpp_root_pe() .and. debug)  print *,'fv3 assign_import: get lwflx from mediator'
@@ -1358,9 +1356,9 @@ end subroutine atmos_data_type_chksum
             do i=isc,iec
               nb = Atm_block%blkno(i,j)
               ix = Atm_block%ixp(i,j)
-          if (IPD_Data(nb)%Sfcprop%slmsk(ix) < 0.1 .or. IPD_Data(nb)%Sfcprop%slmsk(ix) > 1.9) then
-              IPD_Data(nb)%Coupling%dqsfcin_cpl(ix) = -datar8(i,j)
-          endif
+              if (IPD_Data(nb)%Sfcprop%ocnfrac(ix) > 0.) then
+                IPD_Data(nb)%Coupling%dqsfcin_cpl(ix) = -datar8(i,j)
+              endif
             enddo
             enddo
             if (mpp_pe() == mpp_root_pe() .and. debug)  print *,'fv3 assign_import: get laten_heat from mediator'
@@ -1376,9 +1374,9 @@ end subroutine atmos_data_type_chksum
             do i=isc,iec
               nb = Atm_block%blkno(i,j)
               ix = Atm_block%ixp(i,j)
-          if (IPD_Data(nb)%Sfcprop%slmsk(ix) < 0.1 .or. IPD_Data(nb)%Sfcprop%slmsk(ix) > 1.9) then
-              IPD_Data(nb)%Coupling%dtsfcin_cpl(ix) = -datar8(i,j)
-          endif
+              if (IPD_Data(nb)%Sfcprop%ocnfrac(ix) > 0.) then
+                IPD_Data(nb)%Coupling%dtsfcin_cpl(ix) = -datar8(i,j)
+              endif
             enddo
             enddo
             if (mpp_pe() == mpp_root_pe() .and. debug)  print *,'fv3 assign_import: get sensi_heat from mediator'
@@ -1394,9 +1392,9 @@ end subroutine atmos_data_type_chksum
             do i=isc,iec
               nb = Atm_block%blkno(i,j)
               ix = Atm_block%ixp(i,j)
-          if (IPD_Data(nb)%Sfcprop%slmsk(ix) < 0.1 .or. IPD_Data(nb)%Sfcprop%slmsk(ix) > 1.9) then
-              IPD_Data(nb)%Coupling%dusfcin_cpl(ix) = -datar8(i,j)
-          endif
+              if (IPD_Data(nb)%Sfcprop%ocnfrac(ix) > 0.) then
+                IPD_Data(nb)%Coupling%dusfcin_cpl(ix) = -datar8(i,j)
+              endif
             enddo
             enddo
             if (mpp_pe() == mpp_root_pe() .and. debug)  print *,'fv3 assign_import: get zonal_moment_flx from mediator'
@@ -1412,9 +1410,9 @@ end subroutine atmos_data_type_chksum
             do i=isc,iec
               nb = Atm_block%blkno(i,j)
               ix = Atm_block%ixp(i,j)
-          if (IPD_Data(nb)%Sfcprop%slmsk(ix) < 0.1 .or. IPD_Data(nb)%Sfcprop%slmsk(ix) > 1.9) then
-              IPD_Data(nb)%Coupling%dvsfcin_cpl(ix) = -datar8(i,j)
-          endif
+              if (IPD_Data(nb)%Sfcprop%ocnfrac(ix) > 0.) then
+                IPD_Data(nb)%Coupling%dvsfcin_cpl(ix) = -datar8(i,j)
+              endif
             enddo
             enddo
             if (mpp_pe() == mpp_root_pe() .and. debug)  print *,'fv3 assign_import: get merid_moment_flx from mediator'
@@ -1465,15 +1463,18 @@ end subroutine atmos_data_type_chksum
         nb = Atm_block%blkno(i,j)
         ix = Atm_block%ixp(i,j)
 !if it is ocean or ice get sst from mediator
-        if (IPD_Data(nb)%Sfcprop%slmsk(ix) < 0.1 .or.  IPD_Data(nb)%Sfcprop%slmsk(ix) > 1.9) then
-           IPD_Data(nb)%Sfcprop%tisfc(ix) = IPD_Data(nb)%Coupling%tisfcin_cpl(ix)
-          if( IPD_Data(nb)%Sfcprop%fice(ix) > 0.15 .and. IPD_Data(nb)%Sfcprop%lakfrac(ix) == 0.) then
-            IPD_Data(nb)%Sfcprop%hice(ix)  = IPD_Data(nb)%Coupling%hicein_cpl(ix)
-            IPD_Data(nb)%Sfcprop%snowd(ix) = IPD_Data(nb)%Coupling%hsnoin_cpl(ix)
-          else
-            IPD_Data(nb)%Sfcprop%hice(ix)  = 0.
-            IPD_Data(nb)%Sfcprop%snowd(ix) = 0.
-          endif
+        if (IPD_Data(nb)%Sfcprop%ocnfrac(ix) > 0.) then
+            IPD_Data(nb)%Sfcprop%tisfc(ix) = IPD_Data(nb)%Coupling%tisfcin_cpl(ix)
+            if( IPD_Data(nb)%Coupling%ficein_cpl(ix) >= 0.15 ) then
+              IPD_Data(nb)%Sfcprop%fice(ix)  = IPD_Data(nb)%Coupling%ficein_cpl(ix)
+              IPD_Data(nb)%Sfcprop%hice(ix)  = IPD_Data(nb)%Coupling%hicein_cpl(ix)
+              IPD_Data(nb)%Sfcprop%snowd(ix) = IPD_Data(nb)%Coupling%hsnoin_cpl(ix)
+            else
+              IPD_Data(nb)%Sfcprop%fice(ix)  = 0.
+              IPD_Data(nb)%Sfcprop%hice(ix)  = 0.
+              IPD_Data(nb)%Sfcprop%snowd(ix) = 0.
+              IPD_Data(nb)%Sfcprop%slmsk(ix) = 0.
+            endif
         endif
       enddo
       enddo
@@ -2013,7 +2014,7 @@ end subroutine atmos_data_type_chksum
         do i=isc,iec
           nb = Atm_block%blkno(i,j)
           ix = Atm_block%ixp(i,j)
-          exportData(i,j,idx) = IPD_Data(nb)%coupling%slmsk_cpl(ix)
+          exportData(i,j,idx) = IPD_Data(nb)%coupling%lndfrac_cpl(ix)
         enddo
       enddo
     endif
@@ -2192,7 +2193,7 @@ end subroutine atmos_data_type_chksum
         nb = Atm_block%blkno(i,j)
         ix = Atm_block%ixp(i,j)
 ! use land sea mask: land:1, ocean:0
-        lsmask(i,j) = IPD_Data(nb)%SfcProp%slmsk(ix)
+        lsmask(i,j) = nint(IPD_Data(nb)%SfcProp%lndfrac(ix))
       enddo
     enddo
 !
