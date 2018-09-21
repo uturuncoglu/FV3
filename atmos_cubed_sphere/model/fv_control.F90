@@ -1056,6 +1056,9 @@ module fv_control_mod
          call setup_master(Atm(1)%pelist)
          grids_on_this_pe(1) = .true.
          Atm(1)%npes_this_grid = npes
+         
+         ! rsd debug add nullify
+         nullify(Atm(1)%parent_grid)
 
       else
 

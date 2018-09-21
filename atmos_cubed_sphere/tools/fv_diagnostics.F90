@@ -2676,7 +2676,8 @@ contains
 
           deallocate(a3)
        endif
-       if( allocated(wz) ) deallocate (wz)
+! rsd debug commented out deallocate below
+!       if( allocated(wz) ) deallocate (wz)
 
 
 !-------------------------------------------------------
