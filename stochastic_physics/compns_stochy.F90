@@ -122,7 +122,11 @@
       read(nlunit,nam_stochy)
 #endif
 #ifdef INTERNAL_FILE_NML
-      read(input_nml_file, nml=nam_sfcperts)
+      read(input_nml_file, nml=nam_sfcperts, iostat=ios)
+      ! rsd debug add iostat error check
+      if (ios /= 0) then
+         print *, "ERROR reading nam_sfcperts from namelist"
+      endif
 #else
       rewind (nlunit)
       open (unit=nlunit, file=fn_nml, READONLY, status='OLD', iostat=ios)
