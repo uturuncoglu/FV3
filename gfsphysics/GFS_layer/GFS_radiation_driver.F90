@@ -1252,6 +1252,10 @@
 !
 !===> ...  begin here
 !
+!only call GFS_radiation_driver at radiation time step
+
+      if (.not. (Model%lsswr .or. Model%lslwr )) return
+!
 !--- set commonly used integers
       me    = Model%me
       LM    = Model%levr
@@ -1394,9 +1398,11 @@
       endif                               ! end_if_ntoz
 
 !>  - Call coszmn(), to compute cosine of zenith angle.
-      call coszmn (Grid%xlon,Grid%sinlat,           &     !  ---  inputs
-                   Grid%coslat,Model%solhr, IM, me, &
+      if( Model%lsswr ) then
+        call coszmn (Grid%xlon,Grid%sinlat,           &   !  ---  inputs
+                   Grid%coslat,Model%solhr, IM, me,   &
                    Radtend%coszen, Radtend%coszdg)        !  ---  outputs
+      endif
 
 !>  - Call getgases(), to set up non-prognostic gas volume mixing
 !!    ratioes (gasvmr).
