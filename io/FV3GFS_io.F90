@@ -100,7 +100,7 @@ module FV3GFS_io_mod
 !--- miscellaneous other variables
   logical :: use_wrtgridcomp_output = .FALSE.
   logical :: module_is_initialized  = .FALSE.
-  logical :: backward_bitw = .true.	! for backward bitwise identity
+  logical :: non_frac = .true.
 
   CONTAINS
 
@@ -417,7 +417,7 @@ module FV3GFS_io_mod
       oro_name2(15) = 'elvmax'     ! hprime(ix,14)
       oro_name2(16) = 'orog_filt'  ! oro
       oro_name2(17) = 'orog_raw'   ! oro_uf
-    if (backward_bitw) then ! to achive bitwise identical results
+    if (non_frac) then
       oro_name2(18) = 'slmsk'      ! nint of land fraction [0:1]
     else
       oro_name2(18) = 'land_frac'  ! land fraction [0:1]
@@ -425,7 +425,7 @@ module FV3GFS_io_mod
       oro_name2(19) = 'lake_frac'  ! lake fraction [0:1]
       oro_name2(20) = 'lake_depth' ! lake depth(m)
       !--- register the 2D fields
-     if (backward_bitw) then ! to achive bitwise identical results
+    if (non_frac) then
       do num = 1,nvar_o2-2
         var2_p => oro_var2(:,:,num)
         id_restart = register_restart_field(Oro_restart, fn_oro, oro_name2(num), var2_p, domain=fv_domain)
@@ -472,7 +472,7 @@ module FV3GFS_io_mod
         Sfcprop(nb)%oro_uf(ix)    = oro_var2(i,j,17)
         Sfcprop(nb)%slmsk(ix)     = oro_var2(i,j,18)
 
-       if (backward_bitw) then
+       if (non_frac) then
           if(Sfcprop(nb)%slmsk(ix) == 1.) then   ! land
             Sfcprop(nb)%ocnfrac(ix)  = 0.
             Sfcprop(nb)%lakfrac(ix)  = 0.

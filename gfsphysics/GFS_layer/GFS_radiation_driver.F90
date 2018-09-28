@@ -1248,6 +1248,7 @@
 
 !     logical effr_in
 !     data effr_in/.false./
+      integer, dimension(size(Grid%xlon,1)) :: iwet, idry
 !
 !===> ...  begin here
 !
@@ -1317,6 +1318,13 @@
           tsfg(i) = Sfcprop%tsfc(i)
         enddo
       endif
+
+      do i = 1, IM
+        idry(i) = 0
+        iwet(i) = 0
+        if(Sfcprop%lndfrac(i)>0.) idry(i) = 1
+        if(Sfcprop%ocnfrac(i)>0. .or. Sfcprop%lakfrac(i)>0.) iwet(i) = 1
+      enddo
 
 !> -# Prepare atmospheric profiles for radiation input.
 !
@@ -1800,9 +1808,14 @@
 !>  - Call module_radiation_surface::setalb() to setup surface albedo.
 !!  for SW radiation.
 
-        call setalb (Sfcprop%slmsk, Sfcprop%snowd, Sfcprop%sncovr,&    !  ---  inputs:
-                     Sfcprop%snoalb, Sfcprop%zorl, Radtend%coszen,&
-                     tsfg, tsfa, Sfcprop%hprim, Sfcprop%alvsf,    &
+        call setalb (iwet,idry,                                   &    !  ---  inputs:
+                     Sfcprop%slmsk, Sfcprop%snowd, Sfcprop%sncovr,&
+                     Sfcprop%snoalb,Sfcprop%zorl,Sfcprop%zorl,    &  !Sfcprop%zorl_ice,&
+                     Radtend%coszen,                              &
+                     tsfg, tsfa, Sfcprop%hprim,                   &
+                     Sfcprop%lndfrac,Sfcprop%ocnfrac,             &
+                     Sfcprop%lakfrac,                             &
+                     Sfcprop%alvsf,                               &
                      Sfcprop%alnsf, Sfcprop%alvwf, Sfcprop%alnwf, &
                      Sfcprop%facsf, Sfcprop%facwf, Sfcprop%fice,  &
                      Sfcprop%tisfc, IM,                           &
@@ -1914,8 +1927,11 @@
 !>  - Call module_radiation_surface::setemis(),to setup surface
 !! emissivity for LW radiation.
 
-        call setemis (Grid%xlon, Grid%xlat, Sfcprop%slmsk,         &        !  ---  inputs
-                      Sfcprop%snowd, Sfcprop%sncovr, Sfcprop%zorl, &
+        call setemis (Grid%xlon,Grid%xlat,iwet,idry,Sfcprop%slmsk, &        !  --- inputs
+                      Sfcprop%ocnfrac,Sfcprop%lndfrac,             &
+                      Sfcprop%lakfrac,                             &
+                      Sfcprop%snowd, Sfcprop%sncovr,               &
+                      Sfcprop%zorl, Sfcprop%zorl, Sfcprop%fice,    &
                       tsfg, tsfa, Sfcprop%hprim, IM,               & 
                       Radtend%semis)                                              !  ---  outputs
 

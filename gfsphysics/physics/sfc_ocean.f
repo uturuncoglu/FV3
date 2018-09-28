@@ -104,7 +104,7 @@
 !
 !  --- ...  flag for open water
       do i = 1, im
-        flag(i) = ( iwet(i) == 1 .and. covice(i) < cimin
+        flag(i) = ( iwet(i) == 1 .and. covice(i) < 1.
      &                           .and. flag_iter(i) )
 
 !  --- ...  initialize variables. all units are supposedly m.k.s. unless specified

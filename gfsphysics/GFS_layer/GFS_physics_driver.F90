@@ -1252,7 +1252,7 @@ module module_physics_driver
         if (Model%nstf_name(1) > 0) then
 
           do i=1,im
-            if (iwet(i) == 1 .and. cice(i) < cimin ) then
+            if (iwet(i) == 1 .and. cice(i) < 1. ) then
               tem      = (Sfcprop%oro(i)-Sfcprop%oro_uf(i)) * rlapse
               tseal(i) = tsfc_ocn(i)  + tem
               tsurf_ocn(i) = tsurf_ocn(i) + tem
@@ -1280,7 +1280,7 @@ module module_physics_driver
                         hflx_ocn, ep1d_ocn)
 
           do i=1,im
-            if (iwet(i) == 1 .and. cice(i) < cimin ) then
+            if (iwet(i) == 1 .and. cice(i) < 1. ) then
               tsurf_ocn(i) = tsurf_ocn(i)				&
                - (Sfcprop%oro(i)-Sfcprop%oro_uf(i)) * rlapse
             endif
@@ -1295,7 +1295,7 @@ module module_physics_driver
                               Sfcprop%z_c, iwet, cice, zsea1, zsea2,     &
                               im, 1, dtzm)
             do i=1,im
-              if (iwet(i) == 1 .and. cice(i) < cimin ) then
+              if (iwet(i) == 1 .and. cice(i) < 1. ) then
                 tsfc_ocn(i) = max(271.2,Sfcprop%tref(i) + dtzm(i)) -     &
                                 (Sfcprop%oro(i)-Sfcprop%oro_uf(i))*rlapse
               endif
@@ -1409,18 +1409,12 @@ module module_physics_driver
           flag_guess(i) = .false.
 
           if (iter == 1 .and. wind(i) < 2.0) then
-            if (idry(i) == 1 .or. (iwet(i) == 1 .and. cice(i) < cimin  &
+            if (idry(i) == 1 .or. (iwet(i) == 1 .and. cice(i) < 1.  &
                 .and. Model%nstf_name(1) > 0)) then
               flag_iter(i) = .true.
             endif
           endif
 
-!         if(islmsk(i) == 1 .and. iter == 1) then
-!           if (wind(i) < 2.0) flag_iter(i) = .true.
-!         elseif (islmsk(i) == 0 .and. iter == 1                        &
-!    &                           .and. nstf_name(1) > 0) then
-!           if (wind(i) < 2.0) flag_iter(i) = .true.
-!         endif
         enddo
 
       enddo   ! end iter_loop
@@ -4437,12 +4431,7 @@ module module_physics_driver
     real(kind=kind_phys)            :: frac_wet
 
     frac_wet=max(frac_lak,frac_ocn)
-    if (frac_ice.eq.0. .or. frac_ice.eq.1.) then
-      cmposit3 = frac_dry*lndval + frac_wet*(frac_ice*iceval + (1.-frac_ice)*ocnval)
-    else  ! Need for now b/c if 0<frac_ice<1, ocnval = HUGE
-      cmposit3 = frac_dry*lndval + frac_wet*iceval
-    endif
-
+    cmposit3 = frac_dry*lndval + frac_wet*(frac_ice*iceval + (1.-frac_ice)*ocnval)
     return
     end function cmposit3
 

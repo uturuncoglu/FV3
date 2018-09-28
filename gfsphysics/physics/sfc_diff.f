@@ -78,7 +78,7 @@
 !  surface roughness length is converted to m from cm
 !
       do i=1,im
-       if (iwet(i) == 1 .and. covice(i) < cimin) then ! some ocean
+       if (iwet(i) == 1 .and. covice(i) < 1.) then ! some ocean
         if(flag_iter(i)) then 
           wind(i) = max(sqrt(u1(i)*u1(i) + v1(i)*v1(i))
      &                + max(0.0, min(ddvel(i), 30.0)), 1.0)

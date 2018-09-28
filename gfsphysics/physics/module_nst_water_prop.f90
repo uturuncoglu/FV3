@@ -651,7 +651,7 @@ end subroutine solar_time_from_julian
 !
       dtw(i,j) = 0.0      
       dtc(i,j) = 0.0      
-      if ( iwet(i,j) == 1 .and. cice(i,j) < cimin ) then
+      if ( iwet(i,j) == 1 .and. cice(i,j) < 1. ) then
 !
 !       get the mean warming in the range of z=z1 to z=z2
 !
@@ -694,7 +694,7 @@ end subroutine solar_time_from_julian
 !$omp parallel do private(j,i)
   do j = 1, ny
     do i= 1, nx
-      if ( iwet(i,j) == 1 .and. cice(i,j) < cimin ) then
+      if ( iwet(i,j) == 1 .and. cice(i,j) < 1. ) then
         dtm(i,j) = dtw(i,j) - dtc(i,j)
       endif
     enddo
