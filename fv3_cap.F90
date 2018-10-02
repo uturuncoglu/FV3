@@ -280,6 +280,8 @@ module fv3gfs_cap_mod
     rc = ESMF_SUCCESS
     timeis = mpi_wtime()
 
+    call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO)
+
     call ESMF_GridCompGet(gcomp,name=name,vm=vm,rc=rc)
     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
       line=__LINE__, &
@@ -954,6 +956,7 @@ module fv3gfs_cap_mod
               file=__FILE__)) &
               return  ! bail out
           end if
+          call ESMF_LogWrite(subname//'To_fv3 '//trim(ImportFieldsList(i)), ESMF_LOGMSG_INFO)
         end do
       
         ! exportable fields:
@@ -974,6 +977,7 @@ module fv3gfs_cap_mod
               file=__FILE__)) &
               return  ! bail out
           end if
+          call ESMF_LogWrite(subname//'Fr_fv3 '//trim(ExportFieldsList(i)), ESMF_LOGMSG_INFO)
         end do
       
       endif
@@ -981,9 +985,12 @@ module fv3gfs_cap_mod
     endif
 
     if(mype==0) print *,'in fv3_cap, init time=',mpi_wtime()-timeis
-!-----------------------------------------------------------------------
-!
+
+    call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO)
+
   end subroutine InitializeAdvertise
+
+  !-----------------------------------------------------------------------
 
   subroutine InitializeRealize(gcomp, importState, exportState, clock, rc)
     type(ESMF_GridComp)  :: gcomp

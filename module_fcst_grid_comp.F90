@@ -369,7 +369,7 @@ if (rc /= ESMF_SUCCESS) write(0,*) 'rc=',rc,__FILE__,__LINE__; if(ESMF_LogFoundE
 !-----------------------------------------------------------------------
 !
       if(mype==0) print *,'be create fcst grid'
-      if( quilting ) then
+!DEBUG      if( quilting ) then
 
         do tl=1,6
           decomptile(1,tl) = atm_int_state%Atm%layout(1)
@@ -455,7 +455,7 @@ if (rc /= ESMF_SUCCESS) write(0,*) 'rc=',rc,__FILE__,__LINE__; if(ESMF_LogFoundE
             line=__LINE__, &
             file=__FILE__)) &
             return  ! bail out
-!         print *,'call addLsmask2grid after fcstgrid, rc=',rc
+          print *,'call addLsmask2grid after fcstgrid, rc=',rc
           if( cplprint_flag ) then
             call ESMF_GridWriteVTK(fcstgrid, staggerloc=ESMF_STAGGERLOC_CENTER,  &
                  filename='fv3cap_fv3Grid', rc=rc)
@@ -613,7 +613,7 @@ if (rc /= ESMF_SUCCESS) write(0,*) 'rc=',rc,__FILE__,__LINE__; if(ESMF_LogFoundE
         enddo
 
 !end qulting
-      endif
+!DEBUG      endif
 
       call get_atmos_model_ungridded_dim(nlev=numLevels, ntracers=numTracers, &
         nsoillev=numSoilLayers)
