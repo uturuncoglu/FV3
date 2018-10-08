@@ -100,7 +100,6 @@ module FV3GFS_io_mod
 !--- miscellaneous other variables
   logical :: use_wrtgridcomp_output = .FALSE.
   logical :: module_is_initialized  = .FALSE.
-  logical :: non_frac = .true.
 
   CONTAINS
 
@@ -417,25 +416,14 @@ module FV3GFS_io_mod
       oro_name2(15) = 'elvmax'     ! hprime(ix,14)
       oro_name2(16) = 'orog_filt'  ! oro
       oro_name2(17) = 'orog_raw'   ! oro_uf
-    if (non_frac) then
-      oro_name2(18) = 'slmsk'      ! nint of land fraction [0:1]
-    else
       oro_name2(18) = 'land_frac'  ! land fraction [0:1]
-    end if
       oro_name2(19) = 'lake_frac'  ! lake fraction [0:1]
       oro_name2(20) = 'lake_depth' ! lake depth(m)
       !--- register the 2D fields
-    if (non_frac) then
-      do num = 1,nvar_o2-2
-        var2_p => oro_var2(:,:,num)
-        id_restart = register_restart_field(Oro_restart, fn_oro, oro_name2(num), var2_p, domain=fv_domain)
-      enddo
-     else    
       do num = 1,nvar_o2
         var2_p => oro_var2(:,:,num)
         id_restart = register_restart_field(Oro_restart, fn_oro, oro_name2(num), var2_p, domain=fv_domain)
       enddo
-     end if
       nullify(var2_p)
     endif
 
@@ -470,26 +458,14 @@ module FV3GFS_io_mod
         Sfcprop(nb)%oro(ix)       = oro_var2(i,j,16)
         !--- oro_uf
         Sfcprop(nb)%oro_uf(ix)    = oro_var2(i,j,17)
-        Sfcprop(nb)%slmsk(ix)     = oro_var2(i,j,18)
-
-       if (non_frac) then
-          if(Sfcprop(nb)%slmsk(ix) == 1.) then   ! land
-            Sfcprop(nb)%ocnfrac(ix)  = 0.
-            Sfcprop(nb)%lakfrac(ix)  = 0.
-            Sfcprop(nb)%lndfrac(ix)  = 1.
-          else ! ocean or lake or ice
-            Sfcprop(nb)%ocnfrac(ix)  = 1.
-            Sfcprop(nb)%lakfrac(ix)  = 0.
-            Sfcprop(nb)%lndfrac(ix)  = 0.
-          end if
-       else
-        if (1.-oro_var2(i,j,18) > 0. .and. oro_var2(i,j,19) > 0. ) then
-!         print *,"warning: ocean/lake cannot coexist: setting lake frac to zero"
-          oro_var2(i,j,19) = 0. !ocean/lake cannot coexist; if they do, ocean mask rules
+        Sfcprop(nb)%slmsk(ix)     = nint(oro_var2(i,j,18))
+        Sfcprop(nb)%lndfrac(ix)   = oro_var2(i,j,18)    !LHS: land frac [0:1]
+        Sfcprop(nb)%lakfrac(ix)   = oro_var2(i,j,19)    !LHS: lake frac [0:1]
+        if (oro_var2(i,j,19) > 0.) then
+          Sfcprop(nb)%ocnfrac(ix) = 0. ! lake & ocn don't coexist
+        else
+          Sfcprop(nb)%ocnfrac(ix) = 1.-oro_var2(i,j,18) !LHS:ocean frac [0:1]
         end if
-        Sfcprop(nb)%ocnfrac(ix)  = 1.-oro_var2(i,j,18)      !LHS:ocean frac [0:1]
-        Sfcprop(nb)%lndfrac(ix)  = 1.0 - max(1.-oro_var2(i,j,18),oro_var2(i,j,19)) !LHS: land frac [0:1]
-       end if
       enddo
     enddo
  
