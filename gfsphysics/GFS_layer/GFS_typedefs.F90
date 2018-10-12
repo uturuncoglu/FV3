@@ -306,9 +306,9 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: tsfci_cpl  (:) => null()   !< instantaneous sfc temperature
     real (kind=kind_phys), pointer :: psurfi_cpl (:) => null()   !< instantaneous sfc pressure
 
-    !--- topography-based information for the coupling system
-    real (kind=kind_phys), pointer :: oro_cpl    (:) => null()   !< orography          (    oro from GFS_sfcprop_type)
-    real (kind=kind_phys), pointer :: lndfrac_cpl(:) => null()   !< Land/Sea/Ice mask  (lndfrac from GFS_sfcprop_type)
+!   !--- topography-based information for the coupling system (not used Oct.2018)
+!   real (kind=kind_phys), pointer :: oro_cpl    (:) => null()   !< orography          (  oro from GFS_sfcprop_type)
+!   real (kind=kind_phys), pointer :: slmsk_cpl(:) => null()     !< Land/Sea/Ice mask  (slmsk from GFS_sfcprop_type)
 
 !--- stochastic physics
     real (kind=kind_phys), pointer :: shum_wts  (:,:)   => null()  !

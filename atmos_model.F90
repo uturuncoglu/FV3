@@ -2193,7 +2193,8 @@ end subroutine atmos_data_type_chksum
         nb = Atm_block%blkno(i,j)
         ix = Atm_block%ixp(i,j)
 ! use land sea mask: land:1, ocean:0
-        lsmask(i,j) = nint(IPD_Data(nb)%SfcProp%lndfrac(ix))
+!ssun   lsmask(i,j) = nint(IPD_Data(nb)%SfcProp%lndfrac(ix))
+        lsmask(i,j) = ceiling(IPD_Data(nb)%SfcProp%lndfrac(ix))
       enddo
     enddo
 !
