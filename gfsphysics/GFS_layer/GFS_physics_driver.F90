@@ -485,6 +485,10 @@ module module_physics_driver
 !--- GFDL Cloud microphysics
            crain, csnow
 
+! BWG add test
+      real(kind=kind_phys) :: rho
+
+
       real(kind=kind_phys), dimension(Model%ntrac-Model%ncld+2) ::      &
            fscav, fswtr
 
@@ -1944,14 +1948,22 @@ module module_physics_driver
 
       if (Model%cplflx) then
         do i=1,im
+          tem1 = max(Diag%q1(i), 1.e-8)
+          rho = Statein%prsl(i,1) / (con_rd*Diag%t1(i)*(1.0+con_fvirt*tem1))
           Coupling%dusfc_cpl (i) = Coupling%dusfc_cpl(i) + dusfc1(i)*dtf
           Coupling%dvsfc_cpl (i) = Coupling%dvsfc_cpl(i) + dvsfc1(i)*dtf
-          Coupling%dtsfc_cpl (i) = Coupling%dtsfc_cpl(i) + dtsfc1(i)*dtf
-          Coupling%dqsfc_cpl (i) = Coupling%dqsfc_cpl(i) + dqsfc1(i)*dtf
+!          Coupling%dtsfc_cpl (i) = Coupling%dtsfc_cpl(i) + dtsfc1(i)*dtf
+!          Coupling%dqsfc_cpl (i) = Coupling%dqsfc_cpl(i) + dqsfc1(i)*dtf
           Coupling%dusfci_cpl(i) = dusfc1(i)
           Coupling%dvsfci_cpl(i) = dvsfc1(i)
-          Coupling%dtsfci_cpl(i) = dtsfc1(i)
-          Coupling%dqsfci_cpl(i) = dqsfc1(i)
+!          Coupling%dtsfci_cpl(i) = dtsfc1(i)
+!          Coupling%dqsfci_cpl(i) = dqsfc1(i)
+
+          Coupling%dtsfci_cpl(i) = con_cp * rho * hflx_ocn(i)   !sensible heat flux over open ocean
+          Coupling%dqsfci_cpl(i) = con_hvap * rho * evap_ocn(i) !latent heat flux over open ocean
+          Coupling%dtsfc_cpl (i) = Coupling%dtsfc_cpl(i) + Coupling%dtsfci_cpl(i)
+          Coupling%dqsfc_cpl (i) = Coupling%dqsfc_cpl(i) + Coupling%dqsfci_cpl(i)
+
         enddo
       endif
 !-------------------------------------------------------lssav if loop ----------

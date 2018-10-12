@@ -909,7 +909,7 @@ module GFS_diagnostics
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2  => IntDiag(nb)%soilm(:)
-      ExtDiag(idx)%data(nb)%var21 => Sfcprop(nb)%slmsk(:)
+      ExtDiag(idx)%data(nb)%var21 => Sfcprop(nb)%lndfrac(:)
     enddo
 
     idx = idx + 1
@@ -1033,7 +1033,7 @@ module GFS_diagnostics
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2  => IntDiag(nb)%gflux(:)
-!      ExtDiag(idx)%data(nb)%var21 => Sfcprop(nb)%slmsk(:)
+!      ExtDiag(idx)%data(nb)%var21 => Sfcprop(nb)%lndfrac(:)
     enddo
 
     idx = idx + 1
@@ -2217,12 +2217,12 @@ module GFS_diagnostics
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'slmsksfc'
-    ExtDiag(idx)%desc = 'sea-land-ice mask (0-sea, 1-land, 2-ice)'
+    ExtDiag(idx)%desc = 'land fraction [0:1]'
     ExtDiag(idx)%unit = 'numerical'
     ExtDiag(idx)%mod_name = 'gfs_sfc'
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%slmsk(:)
+      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%lndfrac(:)
     enddo
 
     idx = idx + 1

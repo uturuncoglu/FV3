@@ -458,7 +458,7 @@ module FV3GFS_io_mod
         Sfcprop(nb)%oro(ix)       = oro_var2(i,j,16)
         !--- oro_uf
         Sfcprop(nb)%oro_uf(ix)    = oro_var2(i,j,17)
-        Sfcprop(nb)%slmsk(ix)     = nint(oro_var2(i,j,18))
+        Sfcprop(nb)%slmsk(ix)     = ceiling(oro_var2(i,j,18)) !nint(oro_var2(i,j,18))
         Sfcprop(nb)%lndfrac(ix)   = oro_var2(i,j,18)    !LHS: land frac [0:1]
         Sfcprop(nb)%lakfrac(ix)   = oro_var2(i,j,19)    !LHS: lake frac [0:1]
         if (oro_var2(i,j,19) > 0.) then
@@ -579,8 +579,8 @@ module FV3GFS_io_mod
         i = Atm_block%index(nb)%ii(ix) - isc + 1
         j = Atm_block%index(nb)%jj(ix) - jsc + 1
         !--- 2D variables
-        !--- slmsk
-        Sfcprop(nb)%slmsk(ix)  = sfc_var2(i,j,1)
+!       !--- slmsk  ! moved to oro_var2(:,:,18)
+!       Sfcprop(nb)%slmsk(ix)  = sfc_var2(i,j,1)
         !--- tsfc (tsea in sfc file)
         Sfcprop(nb)%tsfc(ix)   = sfc_var2(i,j,2)
         !--- weasd (sheleg in sfc file)
