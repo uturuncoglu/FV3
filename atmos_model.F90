@@ -2014,7 +2014,7 @@ end subroutine atmos_data_type_chksum
         do i=isc,iec
           nb = Atm_block%blkno(i,j)
           ix = Atm_block%ixp(i,j)
-          exportData(i,j,idx) = IPD_Data(nb)%coupling%lndfrac_cpl(ix)
+          exportData(i,j,idx) = IPD_Data(nb)%coupling%slmsk_cpl(ix)
         enddo
       enddo
     endif

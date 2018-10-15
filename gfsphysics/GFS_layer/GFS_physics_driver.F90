@@ -1992,7 +1992,7 @@ module module_physics_driver
 !          Coupling%dtsfci_cpl(i) = dtsfc1(i)
 !          Coupling%dqsfci_cpl(i) = dqsfc1(i)
 
-          Coupling%dtsfci_cpl(i) = con_cp * rho * hflx_ocn(i)   !sensible heat flux over open ocean
+          Coupling%dtsfci_cpl(i) = con_cp   * rho * hflx_ocn(i) !sensible heat flux over open ocean
           Coupling%dqsfci_cpl(i) = con_hvap * rho * evap_ocn(i) !latent heat flux over open ocean
           Coupling%dtsfc_cpl (i) = Coupling%dtsfc_cpl(i) + Coupling%dtsfci_cpl(i)
           Coupling%dqsfc_cpl (i) = Coupling%dqsfc_cpl(i) + Coupling%dqsfci_cpl(i)

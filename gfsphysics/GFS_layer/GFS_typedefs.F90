@@ -306,9 +306,9 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: tsfci_cpl  (:) => null()   !< instantaneous sfc temperature
     real (kind=kind_phys), pointer :: psurfi_cpl (:) => null()   !< instantaneous sfc pressure
 
-!   !--- topography-based information for the coupling system (not used Oct.2018)
-!   real (kind=kind_phys), pointer :: oro_cpl    (:) => null()   !< orography          (  oro from GFS_sfcprop_type)
-!   real (kind=kind_phys), pointer :: slmsk_cpl(:) => null()     !< Land/Sea/Ice mask  (slmsk from GFS_sfcprop_type)
+!   !--- topography-based information for the coupling system
+    real (kind=kind_phys), pointer :: oro_cpl    (:) => null()   !< orography          (  oro from GFS_sfcprop_type)
+    real (kind=kind_phys), pointer :: slmsk_cpl(:) => null()     !< Land/Sea/Ice mask  (slmsk from GFS_sfcprop_type)
 
 !--- stochastic physics
     real (kind=kind_phys), pointer :: shum_wts  (:,:)   => null()  !
@@ -1353,7 +1353,7 @@ module GFS_typedefs
       allocate (Coupling%tsfci_cpl   (IM))
       allocate (Coupling%psurfi_cpl  (IM))
       allocate (Coupling%oro_cpl     (IM))
-      allocate (Coupling%lndfrac_cpl (IM))
+      allocate (Coupling%slmsk_cpl   (IM))
 
       Coupling%dusfci_cpl  = clear_val
       Coupling%dvsfci_cpl  = clear_val
@@ -1378,7 +1378,7 @@ module GFS_typedefs
       Coupling%tsfci_cpl   = clear_val
       Coupling%psurfi_cpl  = clear_val
 !!    Coupling%oro_cpl     = clear_val  !< pointer to sfcprop%oro
-!!    Coupling%lndfrac_cpl = clear_val  !< pointer to sfcprop%lndfrac
+!!    Coupling%slmskc_cpl  = clear_val  !< pointer to sfcprop%lndfrac
     endif
 
     ! -- GSDCHEM coupling options
