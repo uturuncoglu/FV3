@@ -916,7 +916,7 @@ module module_physics_driver
           dtsfc_cice(i)  = Coupling%dtsfcin_cpl(i)
           dqsfc_cice(i)  = Coupling%dqsfcin_cpl(i)
           tisfc_cice(i)  = Sfcprop%tisfc(i)
-          tsea_cice(i)   = Sfcprop%tsfc(i)
+          tsea_cice(i)   = Sfcprop%tsfco(i)
           fice_cice(i)   = Sfcprop%fice(i)
           hice_cice(i)   = Sfcprop%hice(i)
         enddo
@@ -1176,15 +1176,15 @@ module module_physics_driver
         tprcp_ocn(:)  = Sfcprop%tprcp(:)
         tprcp_lnd(:)  = Sfcprop%tprcp(:)
         tprcp_ice(:)  = Sfcprop%tprcp(:)
-        tsfc_lnd(:)   = Sfcprop%tsfc(:)
-        tsfc_ocn(:)   = Sfcprop%tsfc(:)
-        tsfc_ice(:)   = Sfcprop%tsfc(:)
-        tsurf_lnd(:)  = Sfcprop%tsfc(:)
-        tsurf_ocn(:)  = Sfcprop%tsfc(:)
-        tsurf_ice(:)  = Sfcprop%tsfc(:)
-        zorl_ocn(:)   = Sfcprop%zorl(:)
-        zorl_lnd(:)   = Sfcprop%zorl(:)
-        zorl_ice(:)   = Sfcprop%zorl(:)
+        tsfc_lnd(:)   = Sfcprop%tsfcl(:)
+        tsfc_ocn(:)   = Sfcprop%tsfco(:)
+        tsfc_ice(:)   = Sfcprop%tisfc(:)
+        tsurf_lnd(:)  = Sfcprop%tsfcl(:)
+        tsurf_ocn(:)  = Sfcprop%tsfco(:)
+        tsurf_ice(:)  = Sfcprop%tisfc(:)
+        zorl_ocn(:)   = Sfcprop%zorlo(:)
+        zorl_lnd(:)   = Sfcprop%zorll(:)
+        zorl_ice(:)   = Sfcprop%zorll(:) ! assign land value to ice
         snowd_ocn(:)  = Sfcprop%snowd(:)
         snowd_lnd(:)  = Sfcprop%snowd(:)
         snowd_ice(:)  = Sfcprop%snowd(:)
@@ -1198,7 +1198,7 @@ module module_physics_driver
 
 !  --- ...  surface exchange coefficients
 !
-!     if (lprnt) write(0,*)' tsfc=',Sfcprop%tsfc(ipr),' tsurf=',tsurf(ipr),iter
+!     if (lprnt) write(0,*)' tsfco=',Sfcprop%tsfco(ipr),' tsurf=',tsurf(ipr),iter
 
 
         call sfc_diff_ocean (im,Statein%pgr, Statein%ugrs, Statein%vgrs,  &
@@ -1244,7 +1244,7 @@ module module_physics_driver
 !          'qss',qss(i),'cmm',Diag%cmm(i),'chh',Diag%chh(i),             &
 !          'gflx',gflx(i),'evap',evap(i),'hflx',hflx(i),'ep1d',ep1d(i),  &
 !          'weasd',Sfcprop%weasd(i),'snowd_i',Sfcprop%snowd(i),          &
-!          'tprcp',Sfcprop%tprcp(i),'tsfc',Sfcprop%tsfc(i),              &
+!          'tprcp',Sfcprop%tprcp(i),'tsfc',Sfcprop%tsfco(i),             &
 !          'tsurf',tsurf(i),'tsfcOcn',tsfc_ocn(i),'tsfcLnd',tsfc_lnd(i), &
 !          'tsfcIce',tsfc_ice(i),'tsurOcn',tsurf_ocn(i),                 &
 !          'tsurLnd',tsurf_lnd(i),'tsurIce',tsurf_ice(i)
@@ -1527,6 +1527,12 @@ module module_physics_driver
 !          'tsurLnd',tsurf_lnd(i),'tsurIce',tsurf_ice(i)                
 !  94      format (a,i3,2f6.2,a,2f9.5/(3(a8,'=',i6))/(4(a8,'=',es11.4)))
 
+           Sfcprop%zorll(i) = zorl_lnd(i)
+           Sfcprop%zorlo(i) = zorl_ocn(i)
+
+           Sfcprop%tsfcl(i) = tsfc_lnd(i)
+           Sfcprop%tsfco(i) = tsfc_ocn(i)
+           Sfcprop%tisfc(i) = tsfc_ice(i)
       end do
 
 ! --- compositing done
@@ -1574,7 +1580,7 @@ module module_physics_driver
           Coupling%q2mi_cpl    (i) = Sfcprop%q2m(i)
           Coupling%u10mi_cpl   (i) = Diag%u10m(i)
           Coupling%v10mi_cpl   (i) = Diag%v10m(i)
-          Coupling%tsfci_cpl   (i) = Sfcprop%tsfc(i)
+          Coupling%tsfci_cpl   (i) = Sfcprop%tisfc(i)
           Coupling%psurfi_cpl  (i) = Statein%pgr(i)
         enddo
 

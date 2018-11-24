@@ -2139,12 +2139,12 @@ module GFS_diagnostics
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'tsfc'
-    ExtDiag(idx)%desc = 'surface temperature'
+    ExtDiag(idx)%desc = 'land surface temperature'
     ExtDiag(idx)%unit = 'K'
     ExtDiag(idx)%mod_name = 'gfs_sfc'
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => Sfcprop(nb)%tsfc(:)
+      ExtDiag(idx)%data(nb)%var2 => Sfcprop(nb)%tsfcl(:)
     enddo
 
     idx = idx + 1
@@ -2228,13 +2228,13 @@ module GFS_diagnostics
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'zorlsfc'
-    ExtDiag(idx)%desc = 'surface roughness'
+    ExtDiag(idx)%desc = 'ocean surface roughness'
     ExtDiag(idx)%unit = 'm'
     ExtDiag(idx)%mod_name = 'gfs_sfc'
     ExtDiag(idx)%cnvfac = cn_one/cn_100
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%zorl(:)
+      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%zorlo(:)
     enddo
 
     idx = idx + 1

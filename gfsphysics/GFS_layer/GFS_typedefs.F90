@@ -148,11 +148,15 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: ocnfrac(:)   => null()  !< ocean fraction [0:1]
     real (kind=kind_phys), pointer :: lndfrac(:)   => null()  !<  land fraction [0:1]
     real (kind=kind_phys), pointer :: lakfrac(:)   => null()  !<  lake fraction [0:1]
-    real (kind=kind_phys), pointer :: tsfc   (:)   => null()  !< surface temperature in k 
+    real (kind=kind_phys), pointer :: tsfc   (:)   => null()  !< surface air temperature in k 
                                                               !< [tsea in gbphys.f]
+    real (kind=kind_phys), pointer :: tsfco  (:)   => null()  !< sst in k 
+    real (kind=kind_phys), pointer :: tsfcl  (:)   => null()  !< surface land temperature in k 
     real (kind=kind_phys), pointer :: tisfc  (:)   => null()  !< surface temperature over ice fraction 
     real (kind=kind_phys), pointer :: snowd  (:)   => null()  !< snow depth water equivalent in mm ; same as snwdph
-    real (kind=kind_phys), pointer :: zorl   (:)   => null()  !< surface roughness in cm 
+    real (kind=kind_phys), pointer :: zorl   (:)   => null()  !< composite surface roughness in cm 
+    real (kind=kind_phys), pointer :: zorlo  (:)   => null()  !< ocean surface roughness in cm 
+    real (kind=kind_phys), pointer :: zorll  (:)   => null()  !< land surface roughness in cm 
     real (kind=kind_phys), pointer :: fice   (:)   => null()  !< ice fraction over open water grid 
     real (kind=kind_phys), pointer :: hprim  (:)   => null()  !< topographic standard deviation in m            !
     real (kind=kind_phys), pointer :: hprime (:,:) => null()  !< orographic metrics
@@ -1081,9 +1085,13 @@ module GFS_typedefs
     allocate (Sfcprop%lndfrac(IM))
     allocate (Sfcprop%lakfrac(IM))
     allocate (Sfcprop%tsfc   (IM))
+    allocate (Sfcprop%tsfco  (IM))
+    allocate (Sfcprop%tsfcl  (IM))
     allocate (Sfcprop%tisfc  (IM))
     allocate (Sfcprop%snowd  (IM))
     allocate (Sfcprop%zorl   (IM))
+    allocate (Sfcprop%zorlo  (IM))
+    allocate (Sfcprop%zorll  (IM))
     allocate (Sfcprop%fice   (IM))
     allocate (Sfcprop%hprim  (IM))
     allocate (Sfcprop%hprime (IM,Model%nmtvr))
@@ -1093,9 +1101,13 @@ module GFS_typedefs
     Sfcprop%lndfrac = clear_val
     Sfcprop%lakfrac = clear_val
     Sfcprop%tsfc    = clear_val
+    Sfcprop%tsfco   = clear_val
+    Sfcprop%tsfcl   = clear_val
     Sfcprop%tisfc   = clear_val
     Sfcprop%snowd   = clear_val
     Sfcprop%zorl    = clear_val
+    Sfcprop%zorlo   = clear_val
+    Sfcprop%zorll   = clear_val
     Sfcprop%fice    = clear_val
     Sfcprop%hprim   = clear_val
     Sfcprop%hprime  = clear_val
