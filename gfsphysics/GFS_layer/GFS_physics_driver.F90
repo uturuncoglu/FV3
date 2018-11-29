@@ -46,7 +46,8 @@ module module_physics_driver
   real(kind=kind_phys), parameter :: con_d00 = 0.0d0
   real(kind=kind_phys), parameter :: con_day = 86400.d0
 
-  real(kind=kind_phys), parameter :: huge=0.  !huge=1.e33
+  real(kind=kind_phys), parameter :: huge=1.e33
+! real(kind=kind_phys), parameter :: huge=0.
 
 !> GFS Physics Implementation Layer
 !> @brief Layer that invokes individual GFS physics routines
@@ -514,7 +515,8 @@ module module_physics_driver
            prsl1,ddvel
 
 ! --- test point in lat/lon space (radians):
-      real(kind=kind_phys),parameter :: testp(2) = (/ 1.307, 2.798 /)
+!     real(kind=kind_phys),parameter :: testp(2) = (/ -1.161, 2.219 /) ! -66, 128
+      real(kind=kind_phys),parameter :: testp(2) = (/ -1.141, 1.839 /) ! -65.39, 105.37
 
       real(kind=kind_phys), dimension(size(Grid%xlon,1))  ::            &
              zorl_ocn,   zorl_lnd,   zorl_ice,		&
@@ -1497,6 +1499,21 @@ module module_physics_driver
         end do
 
 ! Two-way composites (fields already composited in sfc_sice)
+! Three-way composites when coupled
+     if(Model%cplflx) then
+        evap(i)           = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
+                              evap_ocn(i),  evap_lnd(i),  evap_ice(i))
+        hflx(i)           = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
+                              hflx_ocn(i),  hflx_lnd(i),  hflx_ice(i))
+        qss(i)            = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
+                               qss_ocn(i),   qss_lnd(i),   qss_ice(i))
+        Sfcprop%tsfc(i)   = cmposit3(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
+                                     Sfcprop%lakfrac(i),cice(i),		&
+                              tsfc_ocn(i),  tsfc_lnd(i),  tsfc_ice(i))
+     else
         evap(i)           = cmposit2(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
                                      Sfcprop%lakfrac(i),cice(i),		&
                               evap_ocn(i),  evap_lnd(i),  evap_ice(i))
@@ -1509,6 +1526,8 @@ module module_physics_driver
         Sfcprop%tsfc(i)   = cmposit2(Sfcprop%ocnfrac(i),Sfcprop%lndfrac(i),	&
                                      Sfcprop%lakfrac(i),cice(i),		&
                               tsfc_ocn(i),  tsfc_lnd(i),  tsfc_ice(i))
+     endif  
+
 
 !        if (abs(grid%xlat(i)-testp(1)) +					&
 !            abs(grid%xlon(i)-testp(2))<1.e-2)					&
@@ -1533,6 +1552,17 @@ module module_physics_driver
            Sfcprop%tsfcl(i) = tsfc_lnd(i)
            Sfcprop%tsfco(i) = tsfc_ocn(i)
            Sfcprop%tisfc(i) = tsfc_ice(i)
+
+        if (abs(grid%xlat(i)-testp(1)) +							&
+            abs(grid%xlon(i)-testp(2))<.05 .and.Sfcprop%lndfrac(i)<1.)				&
+           print 94,'lat,lon,i=',grid%xlat(i)*180/3.1416,grid%xlon(i)*180/3.1416,i,		&
+           ' lndfrac,icec,iceh=',Sfcprop%lndfrac(i)*100.,cice(i)*100.,Sfcprop%hice(i), 		&
+           'zorl,o,l,i',Sfcprop%zorl(i),Sfcprop%zorlo(i),Sfcprop%zorll(i),Sfcprop%zorll(i),	&
+           'tsfc,o,l,i',Sfcprop%tsfc(i)-273,Sfcprop%tsfco(i)-273,Sfcprop%tsfcl(i)-273,Sfcprop%tisfc(i)-273,	&
+           'evap,o,l,i',evap(i),evap_ocn(i),evap_lnd(i),evap_ice(i),				&
+           'hflx,o,l,i',hflx(i),hflx_ocn(i),hflx_lnd(i),hflx_ice(i)
+   94      format (a,2f8.2,i5,a,3f7.2/(a10,'=',4es11.4))
+
       end do
 
 ! --- compositing done
@@ -1956,11 +1986,15 @@ module module_physics_driver
         do i=1,im
           if (flag_cice(i)) then
                     cice(i) = fice_cice(i)
-            Sfcprop%tsfc(i) = tsea_cice(i)
-                  dusfc1(i) = dusfc_cice(i)
-                  dvsfc1(i) = dvsfc_cice(i)
-                  dqsfc1(i) = dqsfc_cice(i)
-                  dtsfc1(i) = dtsfc_cice(i)
+! BWG test, 2018-11-29: Comment out these because we already composited
+! If these lines are left in, then the "ice" values are used instead
+!   of the composites
+!            Sfcprop%tsfc(i) = tsea_cice(i)
+!                  dusfc1(i) = dusfc_cice(i)
+!                  dvsfc1(i) = dvsfc_cice(i)
+!                  dqsfc1(i) = dqsfc_cice(i)
+!                  dtsfc1(i) = dtsfc_cice(i)
+! End of BWG test, 2018-11-29
           endif
         enddo
       endif
