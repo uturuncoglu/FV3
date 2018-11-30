@@ -81,16 +81,19 @@
 !!  @{
       subroutine samfdeepcnv(im,ix,km,delt,ntk,ntr,delp,
      &     prslp,psp,phil,qtr,q1,t1,u1,v1,
-     &     cldwrk,rn,kbot,ktop,kcnv,islimsk,garea,
+     &     do_ca,ca_deep,cldwrk,rn,kbot,ktop,kcnv,islimsk,garea,
      &     dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc,
+     &     QLCN, QICN, w_upi, cf_upi, CNV_MFD,
+!    &     QLCN, QICN, w_upi, cf_upi, CNV_MFD, CNV_PRC3,
+     &     CNV_DQLDT,CLCN,CNV_FICE,CNV_NDROP,CNV_NICE,mp_phys,
      &     clam,c0s,c1,betal,betas,evfact,evfactl,pgcon,asolfac)
 !
       use machine , only : kind_phys
       use funcphys , only : fpvs
-      use physcons, grav => con_g, cp => con_cp, hvap => con_hvap
-     &,             rv => con_rv, fv => con_fvirt, t0c => con_t0c
-     &,             rd => con_rd, cvap => con_cvap, cliq => con_cliq
-     &,             eps => con_eps, epsm1 => con_epsm1
+      use physcons, grav => con_g,  cp    => con_cp,    hvap => con_hvap
+     &,             rv   => con_rv, fv    => con_fvirt, t0c  => con_t0c
+     &,             rd   => con_rd, cvap  => con_cvap,  cliq => con_cliq
+     &,             eps  => con_eps,epsm1 => con_epsm1, rgas => con_rd
       implicit none
 !
       integer, intent(in)  :: im, ix,  km, ntk, ntr, ncloud
@@ -98,7 +101,8 @@
       real(kind=kind_phys), intent(in) ::  delt
       real(kind=kind_phys), intent(in) :: psp(im), delp(ix,km), 
      &   prslp(ix,km),  garea(im), dot(ix,km), phil(ix,km) 
-
+      real(kind=kind_phys), intent(in) :: ca_deep(ix)
+      logical, intent(in)  :: do_ca
       integer, intent(inout)  :: kcnv(im)        
       real(kind=kind_phys), intent(inout) ::   qtr(ix,km,ntr+2),
      &   q1(ix,km), t1(ix,km),   u1(ix,km), v1(ix,km)
@@ -240,6 +244,13 @@ c  cloud water
      &                     tx1(im),        sumx(im),      cnvwt(im,km)
 !    &,                    rhbar(im)
 !
+      real(kind=kind_phys), dimension(im,km)   :: qlcn, qicn, w_upi   
+     &,                                           cnv_mfd
+!    &,                                           cnv_mfd, cnv_prc3    
+     &,                                           cnv_dqldt, clcn       
+     &,                                           cnv_fice, cnv_ndrop   
+     &,                                           cnv_nice, cf_upi
+      integer mp_phys
       logical totflg, cnvflg(im), asqecflg(im), flg(im)
 !
 !    asqecflg: flag for the quasi-equilibrium assumption of Arakawa-Schubert
@@ -340,6 +351,23 @@ c
           dt_mf(i,k) = 0.
         enddo
       enddo
+      if(mp_phys == 10) then
+        do k = 1, km
+          do i = 1, im
+            QLCN(i,k)      = qtr(i,k,2)
+            QICN(i,k)      = qtr(i,k,1)
+            w_upi(i,k)     = 0.0
+            cf_upi(i,k)    = 0.0
+            CNV_MFD(i,k)   = 0.0
+
+            CNV_DQLDT(i,k) = 0.0
+            CLCN(i,k)      = 0.0
+            CNV_FICE(i,k)  = 0.0
+            CNV_NDROP(i,k) = 0.0
+            CNV_NICE(i,k)  = 0.0
+          enddo
+        enddo
+      endif
 c
 !     do k = 1, 15
 !       acrit(k) = acritt(k) * (975. - pcrit(k))
@@ -352,7 +380,7 @@ c
 !     val   =         5400.
       val   =         10800.
       dtmax = max(dt2, val )
-c  model tunable parameters are all here
+!  model tunable parameters are all here
       edtmaxl = .3
       edtmaxs = .3
 !     clam    = .1
@@ -2360,6 +2388,15 @@ c
           xmb(i) = min(xmb(i),xmbmax(i))
         endif
       enddo
+
+!If stochastic physics using cellular automata is .true. then perturb the mass-flux here:
+
+      if(do_ca == .true.)then
+        do i=1,im
+         xmb(i) = xmb(i)*(1.0 + ca_deep(i)*5.)
+        enddo
+      endif
+
 c
 c  restore to,qo,uo,vo to t1,q1,u1,v1 in case convection stops
 c
@@ -2709,5 +2746,20 @@ c
 !
       endif
 !!
+      if(mp_phys == 10) then
+        do k=1,km
+          do i=1,im
+            QLCN(i,k)     = qtr(i,k,2) - qlcn(i,k)
+            QICN(i,k)     = qtr(i,k,1) - qicn(i,k)
+            cf_upi(i,k)   = cnvc(i,k)
+            w_upi(i,k)    = ud_mf(i,k)*t1(i,k)*rgas /
+     &                     (dt2*max(sigmagfm(i),1.e-12)*prslp(i,k))
+            CNV_MFD(i,k)  = ud_mf(i,k)/dt2
+            CLCN(i,k)     = cnvc(i,k)
+            CNV_FICE(i,k) = QICN(i,k)
+     &                    / max(1.e-10,QLCN(i,k)+QICN(i,k))
+          enddo
+        enddo
+      endif
       return
       end
