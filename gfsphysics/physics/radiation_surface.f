@@ -633,11 +633,11 @@
        flnd0 = min(f_one, frac_lnd(i))
        fsea0 = max(f_zero, f_one-flnd0)
 
-       fsno_lnd = fsno0_lnd
-       fsno_ice = fsno0_ice
+       fsea = fsea0 * (f_one - fsno0_ice)
+       flnd = flnd0 * (f_one - fsno0_lnd)
 
-       fsea = fsea0 * (f_one - fsno_ice)
-       flnd = flnd0 * (f_one - fsno_lnd)
+       fsno_ice = fsea0 * fsno0_ice
+       fsno_lnd = flnd0 * fsno0_lnd
 ! End of BWG move down, 13 September 2018
 
          ab1bm = min(0.99, alnsf(i)*rfcs)
