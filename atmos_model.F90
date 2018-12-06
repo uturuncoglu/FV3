@@ -1264,6 +1264,7 @@ end subroutine atmos_data_type_chksum
 !        endif
 
         ! get surface temperature: update ice temperature for atm ??? can SST be applied here???
+! ssun: replaced the content of 'surface_temperature' by 'ice_surface_temperature', not the title yet; 12/06/18
         fldname = 'surface_temperature'
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
@@ -1292,7 +1293,7 @@ end subroutine atmos_data_type_chksum
 !if it is ocean or ice get sst from mediator
               if (IPD_Data(nb)%Sfcprop%ocnfrac(ix) > 0.) then
                 IPD_Data(nb)%Coupling%tseain_cpl(ix) = datar8(i,j)
-                IPD_Data(nb)%Sfcprop%tsfc(ix) = datar8(i,j)
+                IPD_Data(nb)%Sfcprop%tsfco(ix) = datar8(i,j)
               endif
             enddo
             enddo

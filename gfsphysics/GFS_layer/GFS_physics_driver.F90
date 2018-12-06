@@ -1563,6 +1563,12 @@ module module_physics_driver
                               tsfc_ocn(i),  tsfc_lnd(i),  tsfc_ice(i))
      endif  
 
+           Sfcprop%zorll(i) = zorl_lnd(i)
+           Sfcprop%zorlo(i) = zorl_ocn(i)
+
+           Sfcprop%tsfcl(i) = tsfc_lnd(i)
+           Sfcprop%tsfco(i) = tsfc_ocn(i)
+           Sfcprop%tisfc(i) = tsfc_ice(i)
 
 !        if (abs(grid%xlat(i)-testp(1)) +					&
 !            abs(grid%xlon(i)-testp(2))<1.e-2)					&
@@ -1581,23 +1587,19 @@ module module_physics_driver
 !          'tsurLnd',tsurf_lnd(i),'tsurIce',tsurf_ice(i)                
 !  94      format (a,i3,2f6.2,a,2f9.5/(3(a8,'=',i6))/(4(a8,'=',es11.4)))
 
-           Sfcprop%zorll(i) = zorl_lnd(i)
-           Sfcprop%zorlo(i) = zorl_ocn(i)
-
-           Sfcprop%tsfcl(i) = tsfc_lnd(i)
-           Sfcprop%tsfco(i) = tsfc_ocn(i)
-           Sfcprop%tisfc(i) = tsfc_ice(i)
-
-        if (abs(grid%xlat(i)-testp(1)) +							&
-            abs(grid%xlon(i)-testp(2))<.05 .and.Sfcprop%lndfrac(i)<1.)				&
-           print 94,'lat,lon,i=',grid%xlat(i)*180/3.1416,grid%xlon(i)*180/3.1416,i,		&
-           ' lndfrac,icec,iceh=',Sfcprop%lndfrac(i)*100.,cice(i)*100.,Sfcprop%hice(i), 		&
-           'zorl,o,l,i',Sfcprop%zorl(i),Sfcprop%zorlo(i),Sfcprop%zorll(i),Sfcprop%zorll(i),	&
-           'tsfc,o,l,i',Sfcprop%tsfc(i)-273,Sfcprop%tsfco(i)-273,Sfcprop%tsfcl(i)-273,Sfcprop%tisfc(i)-273,	&
-           'evap,o,l,i',evap(i),evap_ocn(i),evap_lnd(i),evap_ice(i),				&
-           'hflx,o,l,i',hflx(i),hflx_ocn(i),hflx_lnd(i),hflx_ice(i)
-   94      format (a,2f8.2,i5,a,3f7.2/(a10,'=',4es11.4))
-
+!       if (abs(grid%xlat(i)-testp(1)) +							&
+!           abs(grid%xlon(i)-testp(2))<.03 .and.Sfcprop%lndfrac(i)<1.)				&
+!          print 95,'lat,lon,i=',grid%xlat(i)*180/3.1416,grid%xlon(i)*180/3.1416,i,		&
+!          ' lndfrac,icec,iceh=',Sfcprop%lndfrac(i)*100.,cice(i)*100.,Sfcprop%hice(i), 		&
+!          'zorl,o,l,i',Sfcprop%zorl(i),Sfcprop%zorlo(i),Sfcprop%zorll(i),Sfcprop%zorll(i),	&
+!          'tsfc,o,l,i',Sfcprop%tsfc(i)-273,Sfcprop%tsfco(i)-273,Sfcprop%tsfcl(i)-273,Sfcprop%tisfc(i)-273,	&
+!          'evap,o,l,i',evap(i),evap_ocn(i),evap_lnd(i),evap_ice(i),				&
+!          'hflx,o,l,i',hflx(i),hflx_ocn(i),hflx_lnd(i),hflx_ice(i)
+!  95      format (a,2f8.2,i5,a,3f7.2/(a10,'=',4es11.4))
+!       if (Sfcprop%lndfrac(i)<1. .and. max(abs(evap_ocn(i)),abs(evap_ice(i))).gt.1.e6) &
+!         write(*,'(a,5es9.2)') 'qq bad fice,evapo,i=',grid%xlat(i),grid%xlon(i),cice(i)*100.,evap_ocn(i),evap_ice(i)
+!       if (Sfcprop%lndfrac(i)<1. .and. max(abs(tsfc_ocn(i)),abs(tsfc_ice(i))).gt.1.e6) &
+!         write(*,'(a,5es9.2)') 'qq bad fice,tsfco,i=',grid%xlat(i),grid%xlon(i),cice(i)*100.,tsfc_ocn(i),tsfc_ice(i)
       end do
 
 ! --- compositing done
@@ -2067,15 +2069,18 @@ module module_physics_driver
           rho = Statein%prsl(i,1) / (con_rd*Diag%t1(i)*(1.0+con_fvirt*tem1))
           Coupling%dusfc_cpl (i) = Coupling%dusfc_cpl(i) + dusfc1(i)*dtf
           Coupling%dvsfc_cpl (i) = Coupling%dvsfc_cpl(i) + dvsfc1(i)*dtf
-!          Coupling%dtsfc_cpl (i) = Coupling%dtsfc_cpl(i) + dtsfc1(i)*dtf
-!          Coupling%dqsfc_cpl (i) = Coupling%dqsfc_cpl(i) + dqsfc1(i)*dtf
+!         Coupling%dtsfc_cpl (i) = Coupling%dtsfc_cpl(i) + dtsfc1(i)*dtf
+!         Coupling%dqsfc_cpl (i) = Coupling%dqsfc_cpl(i) + dqsfc1(i)*dtf
           Coupling%dusfci_cpl(i) = dusfc1(i)
           Coupling%dvsfci_cpl(i) = dvsfc1(i)
-!          Coupling%dtsfci_cpl(i) = dtsfc1(i)
-!          Coupling%dqsfci_cpl(i) = dqsfc1(i)
+!         Coupling%dtsfci_cpl(i) = dtsfc1(i)
+!         Coupling%dqsfci_cpl(i) = dqsfc1(i)
 
-          Coupling%dtsfci_cpl(i) = con_cp   * rho * hflx_ocn(i) !sensible heat flux over open ocean
-          Coupling%dqsfci_cpl(i) = con_hvap * rho * evap_ocn(i) !latent heat flux over open ocean
+          if(iwet(i) == 1 ) then
+            Coupling%dtsfci_cpl(i) = con_cp   * rho * hflx_ocn(i) * (1.-cice(i))
+            Coupling%dqsfci_cpl(i) = con_hvap * rho * evap_ocn(i) * (1.-cice(i))
+          endif
+
           Coupling%dtsfc_cpl (i) = Coupling%dtsfc_cpl(i) + Coupling%dtsfci_cpl(i)
           Coupling%dqsfc_cpl (i) = Coupling%dqsfc_cpl(i) + Coupling%dqsfci_cpl(i)
 
@@ -4221,7 +4226,7 @@ module module_physics_driver
         else
           Sfcprop%hice(i)  = 0.0
           Sfcprop%fice(i)  = 0.0
-          Sfcprop%tisfc(i) = Sfcprop%tsfc(i)
+          Sfcprop%tisfc(i) = Sfcprop%tsfco(i)
         endif
       enddo
 
