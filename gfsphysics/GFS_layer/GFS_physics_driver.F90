@@ -1647,7 +1647,7 @@ module module_physics_driver
           Coupling%q2mi_cpl    (i) = Sfcprop%q2m(i)
           Coupling%u10mi_cpl   (i) = Diag%u10m(i)
           Coupling%v10mi_cpl   (i) = Diag%v10m(i)
-          Coupling%tsfci_cpl   (i) = Sfcprop%tisfc(i)
+          Coupling%tsfci_cpl   (i) = Sfcprop%tsfc(i)
           Coupling%psurfi_cpl  (i) = Statein%pgr(i)
         enddo
 
@@ -4217,6 +4217,7 @@ module module_physics_driver
         enddo
       endif
 
+    if(.not. Model%cplflx) then
 !  --- ...  xw: return updated ice thickness & concentration to global array
       do i = 1, im
         if (islmsk(i) == 2) then
@@ -4229,6 +4230,7 @@ module module_physics_driver
           Sfcprop%tisfc(i) = Sfcprop%tsfco(i)
         endif
       enddo
+    endif
 
 !  --- ...  return updated smsoil and stsoil to global arrays
       do k=1,lsoil
