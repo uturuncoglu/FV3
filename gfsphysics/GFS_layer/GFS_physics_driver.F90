@@ -14,7 +14,7 @@ module module_physics_driver
                                    GFS_sfcprop_type, GFS_coupling_type, &
                                    GFS_control_type, GFS_grid_type,     &
                                    GFS_tbd_type,     GFS_cldprop_type,  &
-                                   GFS_radtend_type, GFS_diag_type
+                                   GFS_radtend_type, GFS_diag_type, huge
   use gfdl_cloud_microphys_mod, only: gfdl_cloud_microphys_driver
   use module_mp_thompson,    only: mp_gt_driver
   use module_mp_wsm6,        only: wsm6
@@ -45,9 +45,6 @@ module module_physics_driver
   real(kind=kind_phys), parameter :: con_p001= 0.001d0
   real(kind=kind_phys), parameter :: con_d00 = 0.0d0
   real(kind=kind_phys), parameter :: con_day = 86400.d0
-
-  real(kind=kind_phys), parameter :: huge=1.e33
-! real(kind=kind_phys), parameter :: huge=0.
 
 !> GFS Physics Implementation Layer
 !> @brief Layer that invokes individual GFS physics routines
@@ -1187,6 +1184,13 @@ module module_physics_driver
       prsl1(:) = Statein%prsl(:,1)
       ddvel(:) = Tbd%phy_f2d(:,Model%num_p2d)
 
+      do i=1,im
+        if(iwet(i) == 1) then
+          if(Coupling%dtsfc_cpl(i) == huge) Coupling%dtsfc_cpl(i) = 0.
+          if(Coupling%dqsfc_cpl(i) == huge) Coupling%dqsfc_cpl(i) = 0.
+        endif
+      enddo
+
           cd_ocn(:) = huge ;       cd_lnd(:) = huge ;       cd_ice(:) = huge
          cdq_ocn(:) = huge ;      cdq_lnd(:) = huge ;      cdq_ice(:) = huge
           rb_ocn(:) = huge ;       rb_lnd(:) = huge ;       rb_ice(:) = huge
@@ -2065,6 +2069,7 @@ module module_physics_driver
 
       if (Model%cplflx) then
         do i=1,im
+         if(iwet(i) == 1) then
           tem1 = max(Diag%q1(i), 1.e-8)
           rho = Statein%prsl(i,1) / (con_rd*Diag%t1(i)*(1.0+con_fvirt*tem1))
           Coupling%dusfc_cpl (i) = Coupling%dusfc_cpl(i) + dusfc1(i)*dtf
@@ -2076,14 +2081,11 @@ module module_physics_driver
 !         Coupling%dtsfci_cpl(i) = dtsfc1(i)
 !         Coupling%dqsfci_cpl(i) = dqsfc1(i)
 
-          if(iwet(i) == 1 ) then
-            Coupling%dtsfci_cpl(i) = con_cp   * rho * hflx_ocn(i) * (1.-cice(i))
-            Coupling%dqsfci_cpl(i) = con_hvap * rho * evap_ocn(i) * (1.-cice(i))
-          endif
-
-          Coupling%dtsfc_cpl (i) = Coupling%dtsfc_cpl(i) + Coupling%dtsfci_cpl(i)
-          Coupling%dqsfc_cpl (i) = Coupling%dqsfc_cpl(i) + Coupling%dqsfci_cpl(i)
-
+          Coupling%dtsfci_cpl(i) = con_cp   * rho * hflx_ocn(i) * (1.-cice(i)) !sensible heat flux over open ocean
+          Coupling%dqsfci_cpl(i) = con_hvap * rho * evap_ocn(i) * (1.-cice(i))  !latent heat flux over open ocean
+          Coupling%dtsfc_cpl (i) = Coupling%dtsfc_cpl(i) + Coupling%dtsfci_cpl(i) * dtf
+          Coupling%dqsfc_cpl (i) = Coupling%dqsfc_cpl(i) + Coupling%dqsfci_cpl(i) * dtf
+         endif
         enddo
       endif
 !-------------------------------------------------------lssav if loop ----------
