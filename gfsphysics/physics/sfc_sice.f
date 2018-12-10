@@ -17,13 +17,17 @@
 !!  \section general General Algorithm
 !!  \section detailed Detailed Algorithm
 !!  @{
+      module mdul_sfc_sice
+      use machine , only : kind_phys
+      real (kind=kind_phys), parameter :: cimin=0.15 !  --- minimum ice concentration
+      contains
 !-----------------------------------
       subroutine sfc_sice                                               &
 !...................................
 !  ---  inputs:
      &     ( im, km, ps, u1, v1, t1, q1, delt,                          &
      &       sfcemis, dlwflx, sfcnsw, sfcdsw, srflag,                   &
-     &       cm, ch, prsl1, prslki, islimsk, ddvel,                     &
+     &       cm, ch, prsl1, prslki, ddvel,                              &
      &       flag_iter, mom4ice, lsm, lprnt,ipr,                        &
 !  ---  input/outputs:
      &       hice, fice, tice, weasd, tskin, tprcp, stc, ep,            &
@@ -40,7 +44,7 @@
 !       inputs:                                                         !
 !          ( im, km, ps, u1, v1, t1, q1, delt,                          !
 !            sfcemis, dlwflx, sfcnsw, sfcdsw, srflag,                   !
-!            cm, ch, prsl1, prslki, islimsk, ddvel,                     !
+!            cm, ch, prsl1, prslki, ddvel,                              !
 !            flag_iter, mom4ice, lsm,                                   !
 !       input/outputs:                                                  !
 !            hice, fice, tice, weasd, tskin, tprcp, stc, ep,            !
@@ -84,7 +88,6 @@
 !     ch       - real, surface exchange coeff heat & moisture(m/s) im   !
 !     prsl1    - real, surface layer mean pressure                 im   !
 !     prslki   - real,                                             im   !
-!     islimsk  - integer, sea/land/ice mask (=0/1/2)               im   !
 !     ddvel    - real,                                             im   !
 !     flag_iter- logical,                                          im   !
 !     mom4ice  - logical,                                          im   !
@@ -113,7 +116,6 @@
 !                                                                       !
 ! ===================================================================== !
 !
-      use machine , only : kind_phys
       use funcphys, only : fpvs
       use physcons, only : sbc => con_sbc, hvap => con_hvap,            &
      &                     tgice => con_tice, cp => con_cp,             &
@@ -143,7 +145,6 @@
      &       t1, q1, sfcemis, dlwflx, sfcnsw, sfcdsw, srflag, cm, ch,   &
      &       prsl1, prslki, ddvel
 
-      integer, dimension(im), intent(in) :: islimsk
       real (kind=kind_phys), intent(in)  :: delt
 
       logical, intent(in) :: flag_iter(im), mom4ice
@@ -167,7 +168,6 @@
 
       real (kind=kind_phys) :: t12, t14, tem, stsice(im,kmi)
      &,                        hflxi, hflxw, q0, qs1, wind, qssi, qssw
-      real (kind=kind_phys), parameter :: cimin=0.15 !  --- minimum ice concentration
 
       integer :: i, k
  
@@ -178,8 +178,8 @@
 !  --- ...  set flag for sea-ice
 
       do i = 1, im
-        flag(i) = (islimsk(i) >= 2) .and. flag_iter(i)
-        if (flag_iter(i) .and. islimsk(i) < 2) then
+        flag(i) = fice(i) >= cimin .and. flag_iter(i)
+        if (flag_iter(i) .and. fice(i) < cimin ) then
           hice(i) = 0.0
           fice(i) = 0.0
         endif
@@ -321,9 +321,9 @@
 !     if (lprnt) write(0,*)' tice2=',tice(ipr)
       call ice3lay
 !  ---  inputs:                                                         !
-!    &     ( im, kmi, fice, flag, hfi, hfd, sneti, focn, delt,          !
+     &     ( im, kmi, fice, flag, hfi, hfd, sneti, focn, delt,          !
 !  ---  outputs:                                                        !
-!    &       snowd, hice, stsice, tice, snof, snowmt, gflux )           !
+     &       snowd, hice, stsice, tice, snof, snowmt, gflux )           !
 
 !     if (lprnt) write(0,*)' tice3=',tice(ipr)
       if (mom4ice) then
@@ -394,12 +394,8 @@
       enddo
 !
       return
+      end subroutine sfc_sice
 
-! =================
-      contains
-! =================
-
-!> @}
 
 !-----------------------------------
 !> \brief Brief description of the subroutine
@@ -408,12 +404,12 @@
       subroutine ice3lay
 !...................................
 !  ---  inputs:
-!    &     ( im, kmi, fice, flag, hfi, hfd, sneti, focn, delt,          &
+     &     ( im, kmi, fice, flag, hfi, hfd, sneti, focn, delt,          &
 !  ---  input/outputs:
-!    &       snowd, hice, stsice, tice, snof,                           &
+     &       snowd, hice, stsice, tice, snof,                           &
 !  ---  outputs:
-!    &       snowmt, gflux                                              &
-!    &     )
+     &       snowmt, gflux                                              &
+     &     )
 
 !**************************************************************************
 !                                                                         *
@@ -492,24 +488,24 @@
       real (kind=kind_phys), parameter :: ki4  = ki*4.0
 
 !  ---  inputs:
-!     integer, intent(in) :: im, kmi
+      integer, intent(in) :: im, kmi
 
-!     real (kind=kind_phys), dimension(im), intent(in) :: fice, hfi,    &
-!    &       hfd, sneti, focn
+      real (kind=kind_phys), dimension(im), intent(in) :: fice, hfi,    &
+     &       hfd, sneti, focn
 
-!     real (kind=kind_phys), intent(in) :: delt
+      real (kind=kind_phys), intent(in) :: delt
 
-!     logical, dimension(im), intent(in) :: flag
+      logical, dimension(im), intent(in) :: flag
 
 !  ---  input/outputs:
-!     real (kind=kind_phys), dimension(im), intent(inout) :: snowd,     &
-!    &       hice, tice, snof
+      real (kind=kind_phys), dimension(im), intent(inout) :: snowd,     &
+     &       hice, tice, snof
 
-!     real (kind=kind_phys), dimension(im,kmi), intent(inout) :: stsice
+      real (kind=kind_phys), dimension(im,kmi), intent(inout) :: stsice
 
 !  ---  outputs:
-!     real (kind=kind_phys), dimension(im), intent(out) :: snowmt,      &
-!    &       gflux
+      real (kind=kind_phys), dimension(im), intent(out) :: snowmt,      &
+     &       gflux
 
 !  ---  locals:
 
@@ -666,12 +662,6 @@
       end subroutine ice3lay
 !-----------------------------------
 
-! =========================== !
-!     end contain programs    !
-! =========================== !
-
-!...................................
-      end subroutine sfc_sice
 !-----------------------------------
-
+      end module mdul_sfc_sice
 !> @}

@@ -909,7 +909,7 @@ module GFS_diagnostics
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2  => IntDiag(nb)%soilm(:)
-      ExtDiag(idx)%data(nb)%var21 => Sfcprop(nb)%slmsk(:)
+      ExtDiag(idx)%data(nb)%var21 => Sfcprop(nb)%lndfrac(:)
     enddo
 
     idx = idx + 1
@@ -1033,7 +1033,7 @@ module GFS_diagnostics
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2  => IntDiag(nb)%gflux(:)
-!      ExtDiag(idx)%data(nb)%var21 => Sfcprop(nb)%slmsk(:)
+!      ExtDiag(idx)%data(nb)%var21 => Sfcprop(nb)%lndfrac(:)
     enddo
 
     idx = idx + 1
@@ -1838,6 +1838,76 @@ module GFS_diagnostics
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%shum_wts(:,:)
     enddo
+
+    idx = idx + 1
+    ExtDiag(idx)%axes = 2
+    ExtDiag(idx)%name = 'ca_out'
+    ExtDiag(idx)%desc = 'Cellular Automata'
+    ExtDiag(idx)%unit = '%'
+    ExtDiag(idx)%mod_name = 'gfs_phys'
+    allocate (ExtDiag(idx)%data(nblks))
+    do nb = 1,nblks
+      ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%ca_out(:)
+    enddo
+
+    idx = idx + 1
+    ExtDiag(idx)%axes = 2
+    ExtDiag(idx)%name = 'ca_deep'
+    ExtDiag(idx)%desc = 'CA deep conv'
+    ExtDiag(idx)%unit = '%'
+    ExtDiag(idx)%mod_name = 'gfs_phys'
+    allocate (ExtDiag(idx)%data(nblks))
+    do nb = 1,nblks
+      ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%ca_deep(:)
+    enddo
+
+    idx = idx + 1
+    ExtDiag(idx)%axes = 2
+    ExtDiag(idx)%name = 'ca_turb'
+    ExtDiag(idx)%desc = 'CA turbulence'
+    ExtDiag(idx)%unit = '%'
+    ExtDiag(idx)%mod_name = 'gfs_phys'
+    allocate (ExtDiag(idx)%data(nblks))
+    do nb = 1,nblks
+      ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%ca_turb(:)
+    enddo
+
+    idx = idx + 1
+    ExtDiag(idx)%axes = 2
+    ExtDiag(idx)%name = 'ca_shal'
+    ExtDiag(idx)%desc = 'CA shallow conv'
+    ExtDiag(idx)%unit = '%'
+    ExtDiag(idx)%mod_name = 'gfs_phys'
+    allocate (ExtDiag(idx)%data(nblks))
+    do nb = 1,nblks
+      ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%ca_shal(:)
+    enddo
+
+    idx = idx + 1
+    ExtDiag(idx)%axes = 2
+    ExtDiag(idx)%name = 'ca_rad'
+    ExtDiag(idx)%desc = 'CA radiation'
+    ExtDiag(idx)%unit = '%'
+    ExtDiag(idx)%mod_name = 'gfs_phys'
+    allocate (ExtDiag(idx)%data(nblks))
+    do nb = 1,nblks
+      ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%ca_rad(:)
+    enddo
+
+    idx = idx + 1
+    ExtDiag(idx)%axes = 2
+    ExtDiag(idx)%name = 'ca_micro'
+    ExtDiag(idx)%desc = 'CA microphys'
+    ExtDiag(idx)%unit = '%'
+    ExtDiag(idx)%mod_name = 'gfs_phys'
+    allocate (ExtDiag(idx)%data(nblks))
+    do nb = 1,nblks
+      ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%ca_micro(:)
+    enddo
+
+ 
+
+
 !    if(mpp_pe()==mpp_root_pe())print *,'in gfdl_diag_register,af shum_wts,idx=',idx
 
 !--- three-dimensional variables that need to be handled special when writing 
@@ -2139,12 +2209,12 @@ module GFS_diagnostics
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'tsfc'
-    ExtDiag(idx)%desc = 'surface temperature'
+    ExtDiag(idx)%desc = 'land surface temperature'
     ExtDiag(idx)%unit = 'K'
     ExtDiag(idx)%mod_name = 'gfs_sfc'
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => Sfcprop(nb)%tsfc(:)
+      ExtDiag(idx)%data(nb)%var2 => Sfcprop(nb)%tsfcl(:)
     enddo
 
     idx = idx + 1
@@ -2217,24 +2287,24 @@ module GFS_diagnostics
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'slmsksfc'
-    ExtDiag(idx)%desc = 'sea-land-ice mask (0-sea, 1-land, 2-ice)'
+    ExtDiag(idx)%desc = 'land fraction [0:1]'
     ExtDiag(idx)%unit = 'numerical'
     ExtDiag(idx)%mod_name = 'gfs_sfc'
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%slmsk(:)
+      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%lndfrac(:)
     enddo
 
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'zorlsfc'
-    ExtDiag(idx)%desc = 'surface roughness'
+    ExtDiag(idx)%desc = 'ocean surface roughness'
     ExtDiag(idx)%unit = 'm'
     ExtDiag(idx)%mod_name = 'gfs_sfc'
     ExtDiag(idx)%cnvfac = cn_one/cn_100
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%zorl(:)
+      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%zorlo(:)
     enddo
 
     idx = idx + 1

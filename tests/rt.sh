@@ -220,7 +220,7 @@ if [[ $ROCOTO == true ]]; then
     COMPILE_QUEUE=dev
     ROCOTO_SCHEDULER=lsf
   elif [[ $MACHINE_ID = theia ]]; then
-    QUEUE=batch
+    QUEUE=debug
     COMPILE_QUEUE=service
     ROCOTO_SCHEDULER=moabtorque
   else

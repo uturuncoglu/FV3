@@ -17,13 +17,17 @@
 !!  \section general General Algorithm
 !!  \section detailed Detailed Algorithm
 !!  @{
+      module mdul_sfc_nst
+      use mdul_sfc_sice, only: cimin
+      contains
       subroutine sfc_nst                                                &
 !...................................
 !  ---  inputs:
-     &     ( im, km, ps, u1, v1, t1, q1, tref, cm, ch,                  &
-     &       prsl1, prslki, islimsk, xlon, sinlat, stress,              &
+     &     ( im,    ps, u1, v1, t1, q1, tref, cm, ch,                   &
+     &       prsl1, prslki, iwet, covice,                               &
+     &       xlon, sinlat, stress,                                      &
      &       sfcemis, dlwflx, sfcnsw, rain, timestep, kdt, solhr,xcosz, &
-     &       ddvel, flag_iter, flag_guess, nstf_name,                    &
+     &       ddvel, flag_iter, flag_guess, nstf_name,                   &
      &       lprnt, ipr,                                                &
 !  --- input/output
      &       tskin, tsurf, xt, xs, xu, xv, xz, zm, xtts, xzts, dt_cool, &
@@ -40,10 +44,10 @@
 !                                                                       !
 !    call sfc_nst                                                       !
 !       inputs:                                                         !
-!          ( im, km, ps, u1, v1, t1, q1, tref, cm, ch,                  !
-!            prsl1, prslki, islimsk, xlon, sinlat, stress,              !
+!          ( im, ps, u1, v1, t1, q1, tref, cm, ch,                      !
+!            prsl1, prslki, iwet, covice, xlon, sinlat, stress,         !
 !            sfcemis, dlwflx, sfcnsw, rain, timestep, kdt,solhr,xcosz,  !
-!            ddvel, flag_iter, flag_guess, nstf_name,                    !
+!            ddvel, flag_iter, flag_guess, nstf_name,                   !
 !            lprnt, ipr,                                                !
 !       input/outputs:                                                  !
 !            tskin, tsurf, xt, xs, xu, xv, xz, zm, xtts, xzts, dt_cool, !
@@ -76,7 +80,6 @@
 !                                                                       !
 !  inputs:                                                       size   !
 !     im       - integer, horiz dimension                          1    !
-!     km       - integer, vertical dimension                       1    !
 !     ps       - real, surface pressure (pa)                       im   !
 !     u1, v1   - real, u/v component of surface layer wind (m/s)   im   !
 !     t1       - real, surface layer mean temperature ( k )        im   !
@@ -86,7 +89,8 @@
 !     ch       - real, surface exchange coeff heat & moisture(m/s) im   !
 !     prsl1    - real, surface layer mean pressure (pa)            im   !
 !     prslki   - real,                                             im   !
-!     islimsk  - integer, sea/land/ice mask (=0/1/2)               im   !
+!     iwet     - integer, =1 if any water (0 otherwise)            im   !
+!     covice   - real, ice fraction				   im   !
 !     xlon     - real, longitude         (radians)                 im   !
 !     sinlat   - real, sin of latitude                             im   !
 !     stress   - real, wind stress       (n/m**2)                  im   !
@@ -180,13 +184,12 @@
       real (kind=kind_phys), parameter :: f1440 = 1440.0   ! minutes/day
       real (kind=kind_phys), parameter :: czmin = 0.0001   ! cos(89.994)
 
-
 !  ---  inputs:
-      integer, intent(in) :: im, km, kdt, ipr,nstf_name(5)
+      integer, intent(in) :: im, kdt, ipr,nstf_name(5)
+      integer, dimension(im), intent(in) :: iwet
       real (kind=kind_phys), dimension(im), intent(in) :: ps, u1, v1,   &
      &       t1, q1, tref, cm, ch, prsl1, prslki, xlon,xcosz,           &
-     &       sinlat, stress, sfcemis, dlwflx, sfcnsw, rain, ddvel
-      integer, intent(in), dimension(im):: islimsk
+     &       sinlat, stress, sfcemis, dlwflx, sfcnsw, rain, ddvel,covice
       real (kind=kind_phys), intent(in) :: timestep
       real (kind=kind_phys), intent(in) :: solhr
 
@@ -243,13 +246,15 @@ cc
 ! flag for open water and where the iteration is on
 !
       do i = 1, im
-         flag(i) = islimsk(i) == 0 .and. flag_iter(i)
+         flag(i) = iwet(i) == 1 .and. covice(i) < cimin                 &
+     &           .and. flag_iter(i)
       enddo
 !
 !  save nst-related prognostic fields for guess run
 !
       do i=1, im
-        if((islimsk(i) == 0) .and. flag_guess(i)) then
+        if(iwet(i) == 1 .and. covice(i) < cimin                         &
+     &     .and. flag_guess(i)) then
           xt_old(i)      = xt(i)
           xs_old(i)      = xs(i)
           xu_old(i)      = xu(i)
@@ -531,7 +536,7 @@ cc
 
 ! restore nst-related prognostic fields for guess run
       do i=1, im
-        if((islimsk(i) == 0) ) then
+        if(iwet(i) == 1 .and. covice(i) < cimin ) then
           if(flag_guess(i)) then    ! when it is guess of 
             xt(i)      = xt_old(i)
             xs(i)      = xs_old(i)
@@ -585,4 +590,5 @@ cc
 !     if (lprnt) print *,' tskin=',tskin(ipr)
 
       return
-      end
+      end subroutine sfc_nst
+      end module mdul_sfc_nst

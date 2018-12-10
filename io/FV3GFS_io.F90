@@ -181,10 +181,10 @@ module FV3GFS_io_mod
        !--- statein pressure
        temp2d(i,j, 1) = IPD_Data(nb)%Statein%pgr(ix)
        temp2d(i,j, 2) = IPD_Data(nb)%Sfcprop%slmsk(ix)
-       temp2d(i,j, 3) = IPD_Data(nb)%Sfcprop%tsfc(ix)
+       temp2d(i,j, 3) = IPD_Data(nb)%Sfcprop%tsfco(ix)
        temp2d(i,j, 4) = IPD_Data(nb)%Sfcprop%tisfc(ix)
        temp2d(i,j, 5) = IPD_Data(nb)%Sfcprop%snowd(ix)
-       temp2d(i,j, 6) = IPD_Data(nb)%Sfcprop%zorl(ix)
+       temp2d(i,j, 6) = IPD_Data(nb)%Sfcprop%zorll(ix)
        temp2d(i,j, 7) = IPD_Data(nb)%Sfcprop%fice(ix)
        temp2d(i,j, 8) = IPD_Data(nb)%Sfcprop%hprim(ix)
        temp2d(i,j, 9) = IPD_Data(nb)%Sfcprop%sncovr(ix)
@@ -371,8 +371,8 @@ module FV3GFS_io_mod
     logical :: mand
     real(kind=kind_phys) :: rsnow
     
-    nvar_o2  = 17
-    nvar_s2m = 32
+    nvar_o2  = 20
+    nvar_s2m = 34
     nvar_s2o = 18
     nvar_s3  = 3
 
@@ -408,6 +408,9 @@ module FV3GFS_io_mod
       oro_name2(15) = 'elvmax'     ! hprime(ix,14)
       oro_name2(16) = 'orog_filt'  ! oro
       oro_name2(17) = 'orog_raw'   ! oro_uf
+      oro_name2(18) = 'land_frac'  ! land fraction [0:1]
+      oro_name2(19) = 'lake_frac'  ! lake fraction [0:1]
+      oro_name2(20) = 'lake_depth' ! lake depth(m)
       !--- register the 2D fields
       do num = 1,nvar_o2
         var2_p => oro_var2(:,:,num)
@@ -427,7 +430,7 @@ module FV3GFS_io_mod
         i = Atm_block%index(nb)%ii(ix) - isc + 1
         j = Atm_block%index(nb)%jj(ix) - jsc + 1
         !--- stddev
-        Sfcprop(nb)%hprim(ix)      = oro_var2(i,j,1)
+        Sfcprop(nb)%hprim(ix)     = oro_var2(i,j,1)
         !--- hprime(1:14)
         Sfcprop(nb)%hprime(ix,1)  = oro_var2(i,j,2)
         Sfcprop(nb)%hprime(ix,2)  = oro_var2(i,j,3)
@@ -444,9 +447,17 @@ module FV3GFS_io_mod
         Sfcprop(nb)%hprime(ix,13) = oro_var2(i,j,14)
         Sfcprop(nb)%hprime(ix,14) = oro_var2(i,j,15)
         !--- oro
-        Sfcprop(nb)%oro(ix)        = oro_var2(i,j,16)
+        Sfcprop(nb)%oro(ix)       = oro_var2(i,j,16)
         !--- oro_uf
-        Sfcprop(nb)%oro_uf(ix)     = oro_var2(i,j,17)
+        Sfcprop(nb)%oro_uf(ix)    = oro_var2(i,j,17)
+        Sfcprop(nb)%slmsk(ix)     = nint(oro_var2(i,j,18))
+        Sfcprop(nb)%lndfrac(ix)   = oro_var2(i,j,18)    !land frac [0:1]
+        Sfcprop(nb)%lakfrac(ix)   = oro_var2(i,j,19)    !lake frac [0:1]
+        if (oro_var2(i,j,19) > 0.) then
+          Sfcprop(nb)%ocnfrac(ix) = 0. ! lake & ocn don't coexist
+        else
+          Sfcprop(nb)%ocnfrac(ix) = 1.-oro_var2(i,j,18) !LHS:ocean frac [0:1]
+        end if
       enddo
     enddo
  
@@ -466,7 +477,7 @@ module FV3GFS_io_mod
  
       !--- names of the 2D variables to save
       sfc_name2(1)  = 'slmsk'
-      sfc_name2(2)  = 'tsea'    !tsfc
+      sfc_name2(2)  = 'tsea'    !SST
       sfc_name2(3)  = 'sheleg'  !weasd
       sfc_name2(4)  = 'tg3'
       sfc_name2(5)  = 'zorl'
@@ -496,27 +507,30 @@ module FV3GFS_io_mod
       sfc_name2(29) = 'shdmax'
       sfc_name2(30) = 'slope'
       sfc_name2(31) = 'snoalb'
+      sfc_name2(32) = 'tsfcl'   !surface temp on land
+      sfc_name2(33) = 'zorlo'   !zorl on ocean
       !--- below here all variables are optional
-      sfc_name2(32) = 'sncovr'
+      sfc_name2(34) = 'sncovr'
+
       !--- NSSTM inputs only needed when (nstf_name(1) > 0) .and. (nstf_name(2)) == 0) 
-      sfc_name2(33) = 'tref'
-      sfc_name2(34) = 'z_c'
-      sfc_name2(35) = 'c_0'
-      sfc_name2(36) = 'c_d'
-      sfc_name2(37) = 'w_0'
-      sfc_name2(38) = 'w_d'
-      sfc_name2(39) = 'xt'
-      sfc_name2(40) = 'xs'
-      sfc_name2(41) = 'xu'
-      sfc_name2(42) = 'xv'
-      sfc_name2(43) = 'xz'
-      sfc_name2(44) = 'zm'
-      sfc_name2(45) = 'xtts'
-      sfc_name2(46) = 'xzts'
-      sfc_name2(47) = 'd_conv'
-      sfc_name2(48) = 'ifd'
-      sfc_name2(49) = 'dt_cool'
-      sfc_name2(50) = 'qrain'
+      sfc_name2(nvar_s2m+1) = 'tref'
+      sfc_name2(nvar_s2m+2) = 'z_c'
+      sfc_name2(nvar_s2m+3) = 'c_0'
+      sfc_name2(nvar_s2m+4) = 'c_d'
+      sfc_name2(nvar_s2m+5) = 'w_0'
+      sfc_name2(nvar_s2m+6) = 'w_d'
+      sfc_name2(nvar_s2m+7) = 'xt'
+      sfc_name2(nvar_s2m+8) = 'xs'
+      sfc_name2(nvar_s2m+9) = 'xu'
+      sfc_name2(nvar_s2m+10) = 'xv'
+      sfc_name2(nvar_s2m+11) = 'xz'
+      sfc_name2(nvar_s2m+12) = 'zm'
+      sfc_name2(nvar_s2m+13) = 'xtts'
+      sfc_name2(nvar_s2m+14) = 'xzts'
+      sfc_name2(nvar_s2m+15) = 'd_conv'
+      sfc_name2(nvar_s2m+16) = 'ifd'
+      sfc_name2(nvar_s2m+17) = 'dt_cool'
+      sfc_name2(nvar_s2m+18) = 'qrain'
  
       !--- register the 2D fields
       do num = 1,nvar_s2m
@@ -554,6 +568,7 @@ module FV3GFS_io_mod
     call mpp_error(NOTE,'reading surface properties data from INPUT/sfc_data.tile*.nc')
     call restore_state(Sfc_restart)
  
+!   write(0,*)' sfc_var2=',sfc_var2(:,:,12)
     !--- place the data into the block GFS containers
     do nb = 1, Atm_block%nblks
       do ix = 1, Atm_block%blksz(nb)
@@ -562,14 +577,14 @@ module FV3GFS_io_mod
         !--- 2D variables
         !--- slmsk
         Sfcprop(nb)%slmsk(ix)  = sfc_var2(i,j,1)
-        !--- tsfc (tsea in sfc file)
-        Sfcprop(nb)%tsfc(ix)   = sfc_var2(i,j,2)
+        !--- tsea (SST)
+        Sfcprop(nb)%tsfco(ix)  = sfc_var2(i,j,2)
         !--- weasd (sheleg in sfc file)
         Sfcprop(nb)%weasd(ix)  = sfc_var2(i,j,3)
         !--- tg3
         Sfcprop(nb)%tg3(ix)    = sfc_var2(i,j,4)
-        !--- zorl
-        Sfcprop(nb)%zorl(ix)   = sfc_var2(i,j,5)
+        !--- zorl on land
+        Sfcprop(nb)%zorll(ix)  = sfc_var2(i,j,5)
         !--- alvsf
         Sfcprop(nb)%alvsf(ix)  = sfc_var2(i,j,6)
         !--- alvwf
@@ -622,52 +637,59 @@ module FV3GFS_io_mod
         Sfcprop(nb)%slope(ix)  = sfc_var2(i,j,30)
         !--- snoalb
         Sfcprop(nb)%snoalb(ix) = sfc_var2(i,j,31)
+        !--- sfcl (temp on land)
+        Sfcprop(nb)%tsfcl(ix)  = sfc_var2(i,j,32)
+        !--- zorlo (zorl on ocean)
+        Sfcprop(nb)%zorlo(ix)  = sfc_var2(i,j,33)
+        !--- ssun: getting composite
+        Sfcprop(nb)%zorl(ix)   = Sfcprop(nb)%zorll(ix)*Sfcprop(nb)%lndfrac(ix)+Sfcprop(nb)%zorlo(ix)*(1.-Sfcprop(nb)%lndfrac(ix))
+        Sfcprop(nb)%tsfc(ix)   = Sfcprop(nb)%tsfcl(ix)*Sfcprop(nb)%lndfrac(ix)+Sfcprop(nb)%tsfco(ix)*(1.-Sfcprop(nb)%lndfrac(ix))
         !--- sncovr
-        Sfcprop(nb)%sncovr(ix) = sfc_var2(i,j,32)
+        Sfcprop(nb)%sncovr(ix) = sfc_var2(i,j,34)
         !
         !--- NSSTM variables
         if ((Model%nstf_name(1) > 0) .and. (Model%nstf_name(2) == 1)) then
           !--- nsstm tref
-          Sfcprop(nb)%tref(ix)    = Sfcprop(nb)%tsfc(ix)
+          Sfcprop(nb)%tref(ix)    = Sfcprop(nb)%tsfco(ix)
           Sfcprop(nb)%xz(ix)      = 30.0d0
         endif
         if ((Model%nstf_name(1) > 0) .and. (Model%nstf_name(2) == 0)) then
           !--- nsstm tref
-          Sfcprop(nb)%tref(ix)    = sfc_var2(i,j,33)
+          Sfcprop(nb)%tref(ix)    = sfc_var2(i,j,nvar_s2m+1)
           !--- nsstm z_c
-          Sfcprop(nb)%z_c(ix)     = sfc_var2(i,j,34)
+          Sfcprop(nb)%z_c(ix)     = sfc_var2(i,j,nvar_s2m+2)
           !--- nsstm c_0
-          Sfcprop(nb)%c_0(ix)     = sfc_var2(i,j,35)
+          Sfcprop(nb)%c_0(ix)     = sfc_var2(i,j,nvar_s2m+3)
           !--- nsstm c_d
-          Sfcprop(nb)%c_d(ix)     = sfc_var2(i,j,36)
+          Sfcprop(nb)%c_d(ix)     = sfc_var2(i,j,nvar_s2m+4)
           !--- nsstm w_0
-          Sfcprop(nb)%w_0(ix)     = sfc_var2(i,j,37)
+          Sfcprop(nb)%w_0(ix)     = sfc_var2(i,j,nvar_s2m+5)
           !--- nsstm w_d
-          Sfcprop(nb)%w_d(ix)     = sfc_var2(i,j,38)
+          Sfcprop(nb)%w_d(ix)     = sfc_var2(i,j,nvar_s2m+6)
           !--- nsstm xt
-          Sfcprop(nb)%xt(ix)      = sfc_var2(i,j,39)
+          Sfcprop(nb)%xt(ix)      = sfc_var2(i,j,nvar_s2m+7)
           !--- nsstm xs
-          Sfcprop(nb)%xs(ix)      = sfc_var2(i,j,40)
+          Sfcprop(nb)%xs(ix)      = sfc_var2(i,j,nvar_s2m+8)
           !--- nsstm xu
-          Sfcprop(nb)%xu(ix)      = sfc_var2(i,j,41)
+          Sfcprop(nb)%xu(ix)      = sfc_var2(i,j,nvar_s2m+9)
           !--- nsstm xv
-          Sfcprop(nb)%xv(ix)      = sfc_var2(i,j,42)
+          Sfcprop(nb)%xv(ix)      = sfc_var2(i,j,nvar_s2m+10)
           !--- nsstm xz
-          Sfcprop(nb)%xz(ix)      = sfc_var2(i,j,43)
+          Sfcprop(nb)%xz(ix)      = sfc_var2(i,j,nvar_s2m+11)
           !--- nsstm zm
-          Sfcprop(nb)%zm(ix)      = sfc_var2(i,j,44)
+          Sfcprop(nb)%zm(ix)      = sfc_var2(i,j,nvar_s2m+12)
           !--- nsstm xtts
-          Sfcprop(nb)%xtts(ix)    = sfc_var2(i,j,45)
+          Sfcprop(nb)%xtts(ix)    = sfc_var2(i,j,nvar_s2m+13)
           !--- nsstm xzts
-          Sfcprop(nb)%xzts(ix)    = sfc_var2(i,j,46)
+          Sfcprop(nb)%xzts(ix)    = sfc_var2(i,j,nvar_s2m+14)
           !--- nsstm d_conv
-          Sfcprop(nb)%d_conv(ix)  = sfc_var2(i,j,47)
+          Sfcprop(nb)%d_conv(ix)  = sfc_var2(i,j,nvar_s2m+15)
           !--- nsstm ifd
-          Sfcprop(nb)%ifd(ix)     = sfc_var2(i,j,48)
+          Sfcprop(nb)%ifd(ix)     = sfc_var2(i,j,nvar_s2m+16)
           !--- nsstm dt_cool
-          Sfcprop(nb)%dt_cool(ix) = sfc_var2(i,j,49)
+          Sfcprop(nb)%dt_cool(ix) = sfc_var2(i,j,nvar_s2m+17)
           !--- nsstm qrain
-          Sfcprop(nb)%qrain(ix)   = sfc_var2(i,j,50)
+          Sfcprop(nb)%qrain(ix)   = sfc_var2(i,j,nvar_s2m+18)
         endif
 
         !--- 3D variables
@@ -683,7 +705,7 @@ module FV3GFS_io_mod
     enddo
 
     !--- if sncovr does not exist in the restart, need to create it
-    if (nint(sfc_var2(1,1,32)) == -9999) then
+    if (nint(sfc_var2(1,1,nvar_s2m)) == -9999) then
       if (Model%me == Model%master ) call mpp_error(NOTE, 'gfs_driver::surface_props_input - computing sncovr') 
       !--- compute sncovr from existing variables
       !--- code taken directly from read_fix.f
@@ -734,7 +756,7 @@ module FV3GFS_io_mod
     real(kind=kind_phys), pointer, dimension(:,:)   :: var2_p => NULL()
     real(kind=kind_phys), pointer, dimension(:,:,:) :: var3_p => NULL()
 
-    nvar2m = 32
+    nvar2m = 34
     nvar2o = 18
     nvar3  = 3
 
@@ -757,7 +779,7 @@ module FV3GFS_io_mod
 
       !--- names of the 2D variables to save
       sfc_name2(1)  = 'slmsk'
-      sfc_name2(2)  = 'tsea'    !tsfc
+      sfc_name2(2)  = 'tsea'    !SST
       sfc_name2(3)  = 'sheleg'  !weasd
       sfc_name2(4)  = 'tg3'
       sfc_name2(5)  = 'zorl'
@@ -787,27 +809,29 @@ module FV3GFS_io_mod
       sfc_name2(29) = 'shdmax'
       sfc_name2(30) = 'slope'
       sfc_name2(31) = 'snoalb'
+      sfc_name2(32) = 'tsfcl'   !surface temp on land
+      sfc_name2(33) = 'zorlo'   !zorl on ocean
       !--- below here all variables are optional
-      sfc_name2(32) = 'sncovr'
+      sfc_name2(34) = 'sncovr'
       !--- NSSTM inputs only needed when (nstf_name(1) > 0) .and. (nstf_name(2)) == 0)
-      sfc_name2(33) = 'tref'
-      sfc_name2(34) = 'z_c'
-      sfc_name2(35) = 'c_0'
-      sfc_name2(36) = 'c_d'
-      sfc_name2(37) = 'w_0'
-      sfc_name2(38) = 'w_d'
-      sfc_name2(39) = 'xt'
-      sfc_name2(40) = 'xs'
-      sfc_name2(41) = 'xu'
-      sfc_name2(42) = 'xv'
-      sfc_name2(43) = 'xz'
-      sfc_name2(44) = 'zm'
-      sfc_name2(45) = 'xtts'
-      sfc_name2(46) = 'xzts'
-      sfc_name2(47) = 'd_conv'
-      sfc_name2(48) = 'ifd'
-      sfc_name2(49) = 'dt_cool'
-      sfc_name2(50) = 'qrain'
+      sfc_name2(nvar2m+1) = 'tref'
+      sfc_name2(nvar2m+2) = 'z_c'
+      sfc_name2(nvar2m+3) = 'c_0'
+      sfc_name2(nvar2m+4) = 'c_d'
+      sfc_name2(nvar2m+5) = 'w_0'
+      sfc_name2(nvar2m+6) = 'w_d'
+      sfc_name2(nvar2m+7) = 'xt'
+      sfc_name2(nvar2m+8) = 'xs'
+      sfc_name2(nvar2m+9) = 'xu'
+      sfc_name2(nvar2m+10) = 'xv'
+      sfc_name2(nvar2m+11) = 'xz'
+      sfc_name2(nvar2m+12) = 'zm'
+      sfc_name2(nvar2m+13) = 'xtts'
+      sfc_name2(nvar2m+14) = 'xzts'
+      sfc_name2(nvar2m+15) = 'd_conv'
+      sfc_name2(nvar2m+16) = 'ifd'
+      sfc_name2(nvar2m+17) = 'dt_cool'
+      sfc_name2(nvar2m+18) = 'qrain'
  
       !--- register the 2D fields
       do num = 1,nvar2m
@@ -848,14 +872,14 @@ module FV3GFS_io_mod
         j = Atm_block%index(nb)%jj(ix) - jsc + 1
         !--- slmsk
         sfc_var2(i,j,1)  = Sfcprop(nb)%slmsk(ix)
-        !--- tsfc (tsea in sfc file)
-        sfc_var2(i,j,2)  = Sfcprop(nb)%tsfc(ix)
+        !--- tsea (SST)
+        sfc_var2(i,j,2)  = Sfcprop(nb)%tsfco(ix)
         !--- weasd (sheleg in sfc file)
         sfc_var2(i,j,3)  = Sfcprop(nb)%weasd(ix)
         !--- tg3
         sfc_var2(i,j,4)  = Sfcprop(nb)%tg3(ix)
         !--- zorl
-        sfc_var2(i,j,5)  = Sfcprop(nb)%zorl(ix)
+        sfc_var2(i,j,5)  = Sfcprop(nb)%zorll(ix)
         !--- alvsf
         sfc_var2(i,j,6)  = Sfcprop(nb)%alvsf(ix)
         !--- alvwf
@@ -908,46 +932,50 @@ module FV3GFS_io_mod
         sfc_var2(i,j,30) = Sfcprop(nb)%slope(ix)
         !--- snoalb
         sfc_var2(i,j,31) = Sfcprop(nb)%snoalb(ix)
+        !--- tsfcl (temp on land)
+        sfc_var2(i,j,32) = Sfcprop(nb)%tsfcl(ix)
+        !--- zorlo (zorl on ocean)
+        sfc_var2(i,j,33) = Sfcprop(nb)%zorlo(ix)
         !--- sncovr
-        sfc_var2(i,j,32) = Sfcprop(nb)%sncovr(ix)
+        sfc_var2(i,j,34) = Sfcprop(nb)%sncovr(ix)
         !--- NSSTM variables
         if (Model%nstf_name(1) > 0) then
           !--- nsstm tref
-          sfc_var2(i,j,33) = Sfcprop(nb)%tref(ix)
+          sfc_var2(i,j,nvar2m+1) = Sfcprop(nb)%tref(ix)
           !--- nsstm z_c
-          sfc_var2(i,j,34) = Sfcprop(nb)%z_c(ix)
+          sfc_var2(i,j,nvar2m+2) = Sfcprop(nb)%z_c(ix)
           !--- nsstm c_0
-          sfc_var2(i,j,35) = Sfcprop(nb)%c_0(ix)
+          sfc_var2(i,j,nvar2m+3) = Sfcprop(nb)%c_0(ix)
           !--- nsstm c_d
-          sfc_var2(i,j,36) = Sfcprop(nb)%c_d(ix)
+          sfc_var2(i,j,nvar2m+4) = Sfcprop(nb)%c_d(ix)
           !--- nsstm w_0
-          sfc_var2(i,j,37) = Sfcprop(nb)%w_0(ix)
+          sfc_var2(i,j,nvar2m+5) = Sfcprop(nb)%w_0(ix)
           !--- nsstm w_d
-          sfc_var2(i,j,38) = Sfcprop(nb)%w_d(ix)
+          sfc_var2(i,j,nvar2m+6) = Sfcprop(nb)%w_d(ix)
           !--- nsstm xt
-          sfc_var2(i,j,39) = Sfcprop(nb)%xt(ix)
+          sfc_var2(i,j,nvar2m+7) = Sfcprop(nb)%xt(ix)
           !--- nsstm xs
-          sfc_var2(i,j,40) = Sfcprop(nb)%xs(ix)
+          sfc_var2(i,j,nvar2m+8) = Sfcprop(nb)%xs(ix)
           !--- nsstm xu
-          sfc_var2(i,j,41) = Sfcprop(nb)%xu(ix)
+          sfc_var2(i,j,nvar2m+9) = Sfcprop(nb)%xu(ix)
           !--- nsstm xv
-          sfc_var2(i,j,42) = Sfcprop(nb)%xv(ix)
+          sfc_var2(i,j,nvar2m+10) = Sfcprop(nb)%xv(ix)
           !--- nsstm xz
-          sfc_var2(i,j,43) = Sfcprop(nb)%xz(ix)
+          sfc_var2(i,j,nvar2m+11) = Sfcprop(nb)%xz(ix)
           !--- nsstm zm
-          sfc_var2(i,j,44) = Sfcprop(nb)%zm(ix)
+          sfc_var2(i,j,nvar2m+12) = Sfcprop(nb)%zm(ix)
           !--- nsstm xtts
-          sfc_var2(i,j,45) = Sfcprop(nb)%xtts(ix)
+          sfc_var2(i,j,nvar2m+13) = Sfcprop(nb)%xtts(ix)
           !--- nsstm xzts
-          sfc_var2(i,j,46) = Sfcprop(nb)%xzts(ix)
+          sfc_var2(i,j,nvar2m+14) = Sfcprop(nb)%xzts(ix)
           !--- nsstm d_conv
-          sfc_var2(i,j,47) = Sfcprop(nb)%d_conv(ix)
+          sfc_var2(i,j,nvar2m+15) = Sfcprop(nb)%d_conv(ix)
           !--- nsstm ifd
-          sfc_var2(i,j,48) = Sfcprop(nb)%ifd(ix)
+          sfc_var2(i,j,nvar2m+16) = Sfcprop(nb)%ifd(ix)
           !--- nsstm dt_cool
-          sfc_var2(i,j,49) = Sfcprop(nb)%dt_cool(ix)
+          sfc_var2(i,j,nvar2m+17) = Sfcprop(nb)%dt_cool(ix)
           !--- nsstm qrain
-          sfc_var2(i,j,50) = Sfcprop(nb)%qrain(ix)
+          sfc_var2(i,j,nvar2m+18) = Sfcprop(nb)%qrain(ix)
         endif
  
         !--- 3D variables
@@ -1762,46 +1790,36 @@ module FV3GFS_io_mod
 !      'bdl_intplmethod=',trim(bdl_intplmethod(ibdl))
 
      call ESMF_AttributeAdd(phys_bundle(ibdl), convention="NetCDF", purpose="FV3", &
-       attrList=(/ "fhzero     ", &
-                 & "ncld       ", &
-                 & "nsoil      ", &
-                 & "imp_physics", & 
-                 & "dtp        " /), rc=rc)
+       attrList=(/"fhzero", "ncld", "nsoil", "imp_physics", "dtp"/), rc=rc)
+
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-       line=__LINE__, &
-       file=__FILE__)) &
-       return  ! bail out
+       line=__LINE__, file=__FILE__)) return  ! bail out
+
      call ESMF_AttributeSet(phys_bundle(ibdl), convention="NetCDF", purpose="FV3", &
        name="fhzero", value=fhzero, rc=rc)
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-       line=__LINE__, &
-       file=__FILE__)) &
-       return  ! bail out
+       line=__LINE__, file=__FILE__)) return  ! bail out
+
      call ESMF_AttributeSet(phys_bundle(ibdl), convention="NetCDF", purpose="FV3", &
        name="ncld", value=ncld, rc=rc)
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-       line=__LINE__, &
-       file=__FILE__)) &
-       return  ! bail out
+       line=__LINE__, file=__FILE__)) return  ! bail out
+
      call ESMF_AttributeSet(phys_bundle(ibdl), convention="NetCDF", purpose="FV3", &
        name="nsoil", value=nsoil, rc=rc)
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-       line=__LINE__, &
-       file=__FILE__)) &
-       return  ! bail out
+       line=__LINE__, file=__FILE__)) return  ! bail out
+
      call ESMF_AttributeSet(phys_bundle(ibdl), convention="NetCDF", purpose="FV3", &
        name="imp_physics", value=imp_physics, rc=rc)
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-       line=__LINE__, &
-       file=__FILE__)) &
-       return  ! bail out
+       line=__LINE__, file=__FILE__)) return  ! bail out
+
      call ESMF_AttributeSet(phys_bundle(ibdl), convention="NetCDF", purpose="FV3", &
        name="dtp", value=dtp, rc=rc)
 !     print *,'in fcst gfdl diag, dtp=',dtp,' ibdl=',ibdl
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-       line=__LINE__, &
-       file=__FILE__)) &
-       return  ! bail out
+       line=__LINE__, file=__FILE__)) return  ! bail out
 
 !end ibdl
    enddo
@@ -1820,15 +1838,11 @@ module FV3GFS_io_mod
      call ESMF_AttributeAdd(fcst_grid, convention="NetCDF", purpose="FV3",  &
        attrList=(/"vertical_dim_labels"/), rc=rc)
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-       line=__LINE__, &
-       file=__FILE__)) &
-       return  ! bail out
+       line=__LINE__, file=__FILE__)) return  ! bail out
      call ESMF_AttributeSet(fcst_grid, convention="NetCDF", purpose="FV3", &
        name="vertical_dim_labels", valueList=axis_name_vert, rc=rc)
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-       line=__LINE__, &
-       file=__FILE__)) &
-       return  ! bail out
+       line=__LINE__, file=__FILE__)) return  ! bail out
    endif
 
 !*** add attributes
@@ -1863,33 +1877,28 @@ module FV3GFS_io_mod
                     trim(axis_name(id))//":positive"/), rc=rc)
       endif
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-        line=__LINE__, &
-        file=__FILE__)) &
-        return  ! bail out
+        line=__LINE__, file=__FILE__)) return  ! bail out
+
       call ESMF_AttributeSet(fcst_grid, convention="NetCDF", purpose="FV3", &
         name=trim(axis_name(id)), valueList=axis_data, rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-        line=__LINE__, &
-        file=__FILE__)) &
-        return  ! bail out
+        line=__LINE__, file=__FILE__)) return  ! bail out
+
       call ESMF_AttributeSet(fcst_grid, convention="NetCDF", purpose="FV3", &
         name=trim(axis_name(id))//":long_name", value=trim(long_name), rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-        line=__LINE__, &
-        file=__FILE__)) &
-        return  ! bail out
+        line=__LINE__, file=__FILE__)) return  ! bail out
+
       call ESMF_AttributeSet(fcst_grid, convention="NetCDF", purpose="FV3", &
         name=trim(axis_name(id))//":units", value=trim(units), rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-        line=__LINE__, &
-        file=__FILE__)) &
-        return  ! bail out
+        line=__LINE__, file=__FILE__)) return  ! bail out
+
       call ESMF_AttributeSet(fcst_grid, convention="NetCDF", purpose="FV3", &
         name=trim(axis_name(id))//":cartesian_axis", value=trim(cart_name), rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-        line=__LINE__, &
-        file=__FILE__)) &
-        return  ! bail out
+        line=__LINE__, file=__FILE__)) return  ! bail out
+
       if(direction>0) then
           axis_direct="up"
       else
@@ -1898,16 +1907,13 @@ module FV3GFS_io_mod
       call ESMF_AttributeSet(fcst_grid, convention="NetCDF", purpose="FV3", &
         name=trim(axis_name(id))//":positive", value=trim(axis_direct), rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-        line=__LINE__, &
-        file=__FILE__)) &
-        return  ! bail out
+        line=__LINE__, file=__FILE__)) return  ! bail out
+
       if(trim(edgesS)/='') then
         call ESMF_AttributeSet(fcst_grid, convention="NetCDF", purpose="FV3", &
           name=trim(axis_name(id))//":edges", value=trim(edgesS), rc=rc)
         if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-          line=__LINE__, &
-          file=__FILE__)) &
-          return  ! bail out
+          line=__LINE__, file=__FILE__)) return  ! bail out
       endif
 
      endif
@@ -2000,39 +2006,34 @@ module FV3GFS_io_mod
 !     if( mpp_root_pe() == 0) print *,'phys, create wind vector esmf field'
      call ESMF_LogWrite('bf create winde vector esmf field '//trim(var_name), ESMF_LOGMSG_INFO, rc=rc)
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      return  ! bail out
+      line=__LINE__, file=__FILE__)) return  ! bail out
+
 !datacopyflag=ESMF_DATACOPY_VALUE, &
      field = ESMF_FieldCreate(phys_grid, temp_r3d, datacopyflag=ESMF_DATACOPY_REFERENCE, &
                             gridToFieldMap=(/2,3/), ungriddedLBound=(/1/), ungriddedUBound=(/3/), &
                             name=var_name, indexFlag=ESMF_INDEX_DELOCAL, rc=rc)
+
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      return  ! bail out
+      line=__LINE__, file=__FILE__)) return  ! bail out
      call ESMF_LogWrite('af winde vector esmf field create '//trim(var_name), ESMF_LOGMSG_INFO, rc=rc)
 
      call ESMF_AttributeAdd(field, convention="NetCDF", purpose="FV3", &
         attrList=(/"output_file"/), rc=rc)
-     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-       line=__LINE__, &
-       file=__FILE__)) &
-       call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+       line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
      call ESMF_AttributeSet(field, convention="NetCDF", purpose="FV3", &
         name='output_file',value=trim(output_file),rc=rc)
-     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-       line=__LINE__, &
-       file=__FILE__)) &
-       call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+       line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
      call ESMF_LogWrite('before winde vector esmf field add output_file', ESMF_LOGMSG_INFO, rc=rc)
 
 !     if( mpp_root_pe() == 0)print *,'phys, aftercreate wind vector esmf field'
      call ESMF_FieldBundleAdd(phys_bundle,(/field/), rc=rc)
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-       line=__LINE__, &
-       file=__FILE__)) &
-       call ESMF_Finalize(endflag=ESMF_END_ABORT)
+       line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
      if( present(rcd)) rcd=rc
      call ESMF_LogWrite('aft winde vector esmf field add to fieldbundle'//trim(var_name), ESMF_LOGMSG_INFO, rc=rc)
      return
@@ -2041,18 +2042,15 @@ module FV3GFS_io_mod
        temp_r2d => buffer_phys_nb(isco:ieco,jsco:jeco,kstt)
        field = ESMF_FieldCreate(phys_grid, temp_r2d, datacopyflag=copyflag, &
                               name=var_name, indexFlag=ESMF_INDEX_DELOCAL, rc=rc)
-       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-         line=__LINE__, &
-         file=__FILE__)) &
-         call ESMF_Finalize(endflag=ESMF_END_ABORT)
+       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,       &
+         line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
      else if(size(axes) == 3) then
        temp_r3d => buffer_phys_nb(isco:ieco,jsco:jeco,kstt:kstt+levo-1)
        field = ESMF_FieldCreate(phys_grid, temp_r3d, datacopyflag=copyflag, &
                               name=var_name, indexFlag=ESMF_INDEX_DELOCAL, rc=rc)
-       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-         line=__LINE__, &
-         file=__FILE__)) &
-         call ESMF_Finalize(endflag=ESMF_END_ABORT)
+       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,       &
+         line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
      if( mpp_root_pe() == 0) print *,'add 3D field to after nearest_stod, fld=', trim(var_name)
      endif
@@ -2061,18 +2059,14 @@ module FV3GFS_io_mod
        temp_r2d => buffer_phys_bl(isco:ieco,jsco:jeco,kstt)
        field = ESMF_FieldCreate(phys_grid, temp_r2d, datacopyflag=copyflag, &
                             name=var_name, indexFlag=ESMF_INDEX_DELOCAL, rc=rc)
-       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-         line=__LINE__, &
-         file=__FILE__)) &
-         call ESMF_Finalize(endflag=ESMF_END_ABORT)
+       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,       &
+         line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
      else if(size(axes) == 3) then
        temp_r3d => buffer_phys_bl(isco:ieco,jsco:jeco,kstt:kstt+levo-1)
        field = ESMF_FieldCreate(phys_grid, temp_r3d, datacopyflag=copyflag, &
                             name=var_name, indexFlag=ESMF_INDEX_DELOCAL, rc=rc)
-       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-         line=__LINE__, &
-         file=__FILE__)) &
-         call ESMF_Finalize(endflag=ESMF_END_ABORT)
+       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,       &
+         line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
        if( mpp_root_pe() == 0) print *,'add field to after bilinear, fld=', trim(var_name)
      endif
    endif
@@ -2080,81 +2074,63 @@ module FV3GFS_io_mod
 !*** add field attributes
    call ESMF_AttributeAdd(field, convention="NetCDF", purpose="FV3", &
         attrList=(/"long_name"/), rc=rc)
-   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-     line=__LINE__, &
-     file=__FILE__)) &
-     call ESMF_Finalize(endflag=ESMF_END_ABORT)
+   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+     line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
    call ESMF_AttributeSet(field, convention="NetCDF", purpose="FV3", &
         name='long_name',value=trim(long_name),rc=rc)
-   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-     line=__LINE__, &
-     file=__FILE__)) &
-     call ESMF_Finalize(endflag=ESMF_END_ABORT)
+   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+     line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
    call ESMF_AttributeAdd(field, convention="NetCDF", purpose="FV3", &
         attrList=(/"units"/), rc=rc)
-   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-     line=__LINE__, &
-     file=__FILE__)) &
-     call ESMF_Finalize(endflag=ESMF_END_ABORT)
+   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+     line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
    call ESMF_AttributeSet(field, convention="NetCDF", purpose="FV3", &
         name='units',value=trim(units),rc=rc)
-   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-     line=__LINE__, &
-     file=__FILE__)) &
-     call ESMF_Finalize(endflag=ESMF_END_ABORT)
+   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+     line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
    call ESMF_AttributeAdd(field, convention="NetCDF", purpose="FV3", &
         attrList=(/"missing_value"/), rc=rc)
-   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-     line=__LINE__, &
-     file=__FILE__)) &
-     call ESMF_Finalize(endflag=ESMF_END_ABORT)
+   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+     line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
    call ESMF_AttributeSet(field, convention="NetCDF", purpose="FV3", &
         name='missing_value',value=missing_value,rc=rc)
-   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-     line=__LINE__, &
-     file=__FILE__)) &
-     call ESMF_Finalize(endflag=ESMF_END_ABORT)
+   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+     line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
    call ESMF_AttributeAdd(field, convention="NetCDF", purpose="FV3", &
         attrList=(/"_FillValue"/), rc=rc)
-   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-     line=__LINE__, &
-     file=__FILE__)) &
-     call ESMF_Finalize(endflag=ESMF_END_ABORT)
+   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+     line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
    call ESMF_AttributeSet(field, convention="NetCDF", purpose="FV3", &
         name='_FillValue',value=missing_value,rc=rc)
-   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-     line=__LINE__, &
-     file=__FILE__)) &
-     call ESMF_Finalize(endflag=ESMF_END_ABORT)
+   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+     line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
    call ESMF_AttributeAdd(field, convention="NetCDF", purpose="FV3", &
         attrList=(/"cell_methods"/), rc=rc)
-   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-     line=__LINE__, &
-     file=__FILE__)) &
-     call ESMF_Finalize(endflag=ESMF_END_ABORT)
+   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+     line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
    call ESMF_AttributeSet(field, convention="NetCDF", purpose="FV3", &
         name='cell_methods',value=trim(cell_methods),rc=rc)
-   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-     line=__LINE__, &
-     file=__FILE__)) &
-     call ESMF_Finalize(endflag=ESMF_END_ABORT)
+   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+     line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
 !
    call ESMF_AttributeAdd(field, convention="NetCDF", purpose="FV3", &
         attrList=(/"output_file"/), rc=rc)
-   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-     line=__LINE__, &
-     file=__FILE__)) &
-     call ESMF_Finalize(endflag=ESMF_END_ABORT)
+   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+     line=__LINE__, file=__FILE__))  call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
    call ESMF_AttributeSet(field, convention="NetCDF", purpose="FV3", &
         name='output_file',value=trim(output_file),rc=rc)
-   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-     line=__LINE__, &
-     file=__FILE__)) &
-     call ESMF_Finalize(endflag=ESMF_END_ABORT)
+   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+     line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
 !
 !*** add vertical coord attribute:
@@ -2170,16 +2146,12 @@ module FV3GFS_io_mod
        if (idx>0) then
          call ESMF_AttributeAdd(field, convention="NetCDF", purpose="FV3", &
            attrList=(/"ESMF:ungridded_dim_labels"/), rc=rc)
-         if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-           line=__LINE__, &
-           file=__FILE__)) &
-           return  ! bail out
+         if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+           line=__LINE__, file=__FILE__)) return  ! bail out
          call ESMF_AttributeSet(field, convention="NetCDF", purpose="FV3", &
            name="ESMF:ungridded_dim_labels", valueList=(/trim(axis_name(idx))/), rc=rc)
-         if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-           line=__LINE__, &
-           file=__FILE__)) &
-           return  ! bail out
+         if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,    &
+           line=__LINE__, file=__FILE__)) return  ! bail out
        endif
      enddo
    endif

@@ -17,6 +17,10 @@
 !
 !     Local variables
 !     ---------------
+    integer              ::                     &
+           I_INDEX(Model%nx*Model%ny),          &
+           J_INDEX(Model%nx*Model%ny)
+
     real(kind=kind_phys) ::                     &
            RLA (Model%nx*Model%ny),             &
            RLO (Model%nx*Model%ny),             &
@@ -51,8 +55,10 @@
         STCFC1 (Model%nx*Model%ny*Model%lsoil), &
         SLCFC1 (Model%nx*Model%ny*Model%lsoil)
 
-    real(kind=kind_phys)    :: sig1t, pifac
-    integer :: npts, len, nb, ix, ls, ios
+    character(len=6) :: tile_num_ch
+    real(kind=kind_phys), parameter :: pifac=180.0/pi
+    real(kind=kind_phys)            :: sig1t
+    integer :: npts, len, nb, ix, jx, ls, ios
     logical :: exists
 !
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -60,10 +66,25 @@
 !     if (Model%me .eq. 0) print *,' nlats=',nlats,' lonsinpe='
 !    *,lonsinpe(0,1)
 
+      tile_num_ch = "      "
+      if (Model%tile_num < 10) then
+        write(tile_num_ch, "(a4,i1)") "tile", Model%tile_num
+      else
+        write(tile_num_ch, "(a4,i2)") "tile", Model%tile_num
+      endif
+
+      len = 0
+      do jx = Model%jsc, (Model%jsc+Model%ny-1)
+      do ix = Model%isc, (Model%isc+Model%nx-1)
+        len = len + 1
+        i_index(len) = ix
+        j_index(len) = jx
+      enddo
+      enddo
+
       sig1t = 0.0
       npts  = Model%nx*Model%ny
 !
-      pifac = 180.0 / pi
       len = 0
       do nb = 1,nblks
         do ix = 1,size(Grid(nb)%xlat,1)
@@ -74,9 +95,9 @@
           OROG_UF (len)          = Sfcprop(nb)%oro_uf (ix)
           SLIFCS  (len)          = Sfcprop(nb)%slmsk  (ix)
           if ( Model%nstf_name(1) > 0 ) then
-             TSFFCS(len)         = Sfcprop(nb)%tref   (ix)
+            TSFFCS(len)          = Sfcprop(nb)%tref   (ix)
           else
-             TSFFCS(len)         = Sfcprop(nb)%tsfc   (ix)   
+            TSFFCS(len)          = Sfcprop(nb)%tsfc   (ix)
           endif
           SNOFCS  (len)          = Sfcprop(nb)%weasd  (ix)
           ZORFCS  (len)          = Sfcprop(nb)%zorl   (ix)
@@ -146,17 +167,19 @@
       CALL SFCCYCLE (9998, npts, Model%lsoil, SIG1T, Model%fhcyc, &
                      Model%idate(4), Model%idate(2),              &
                      Model%idate(3), Model%idate(1),              &
-                     Model%fhour, RLA, RLO, SLMASK,               &
+                     Model%phour, RLA, RLO, SLMASK,               &
+!                    Model%fhour, RLA, RLO, SLMASK,               &
                      OROG, OROG_UF, Model%USE_UFO, Model%nst_anl, &
                      SIHFCS, SICFCS, SITFCS, SWDFCS, SLCFC1,      &
                      VMNFCS, VMXFCS, SLPFCS, ABSFCS, TSFFCS,      &
                      SNOFCS, ZORFCS, ALBFC1, TG3FCS, CNPFCS,      &
-                     SMCFC1, STCFC1, SLIFCS, AISFCS, F10MFCS,     &
+                     SMCFC1, STCFC1, SLIFCS, AISFCS,              &
                      VEGFCS, VETFCS, SOTFCS, ALFFC1, CVFCS,       &
                      CVBFCS, CVTFCS, Model%me, Model%nlunit,      &
                      size(Model%input_nml_file),                  &
                      Model%input_nml_file,                        &
-                     Model%ialb, Model%isot, Model%ivegsrc)
+                     Model%ialb, Model%isot, Model%ivegsrc,       &
+                     trim(tile_num_ch), i_index, j_index)
 #ifndef INTERNAL_FILE_NML
       close (Model%nlunit)
 #endif
