@@ -2074,15 +2074,14 @@ module module_physics_driver
           rho = Statein%prsl(i,1) / (con_rd*Diag%t1(i)*(1.0+con_fvirt*tem1))
           Coupling%dusfc_cpl (i) = Coupling%dusfc_cpl(i) + dusfc1(i)*dtf
           Coupling%dvsfc_cpl (i) = Coupling%dvsfc_cpl(i) + dvsfc1(i)*dtf
-!         Coupling%dtsfc_cpl (i) = Coupling%dtsfc_cpl(i) + dtsfc1(i)*dtf
-!         Coupling%dqsfc_cpl (i) = Coupling%dqsfc_cpl(i) + dqsfc1(i)*dtf
           Coupling%dusfci_cpl(i) = dusfc1(i)
           Coupling%dvsfci_cpl(i) = dvsfc1(i)
 !         Coupling%dtsfci_cpl(i) = dtsfc1(i)
 !         Coupling%dqsfci_cpl(i) = dqsfc1(i)
+! replacing above 2 lines w. open water component
+          Coupling%dtsfci_cpl(i) = con_cp   * rho * hflx_ocn(i) !sensible heat flux over open ocean
+          Coupling%dqsfci_cpl(i) = con_hvap * rho * evap_ocn(i) !  latent heat flux over open ocean
 
-          Coupling%dtsfci_cpl(i) = con_cp   * rho * hflx_ocn(i) * (1.-cice(i)) !sensible heat flux over open ocean
-          Coupling%dqsfci_cpl(i) = con_hvap * rho * evap_ocn(i) * (1.-cice(i))  !latent heat flux over open ocean
           Coupling%dtsfc_cpl (i) = Coupling%dtsfc_cpl(i) + Coupling%dtsfci_cpl(i) * dtf
           Coupling%dqsfc_cpl (i) = Coupling%dqsfc_cpl(i) + Coupling%dqsfci_cpl(i) * dtf
          endif
