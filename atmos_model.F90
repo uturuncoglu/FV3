@@ -1382,7 +1382,7 @@ end subroutine atmos_data_type_chksum
         endif
 
         ! get zonal compt of momentum flux:  for sea ice covered area
-        fldname = 'stress_on_air_ice_merid'
+        fldname = 'stress_on_air_ice_zonal'
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then
