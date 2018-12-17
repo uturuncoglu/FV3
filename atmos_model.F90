@@ -1265,7 +1265,7 @@ end subroutine atmos_data_type_chksum
 
         ! get surface temperature: update ice temperature for atm ??? can SST be applied here???
 ! ssun: replaced the content of 'surface_temperature' by 'ice_surface_temperature', not the title yet; 12/06/18
-        fldname = 'surface_temperature'
+        fldname = 'sea_ice_temperature'
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then
@@ -1328,7 +1328,7 @@ end subroutine atmos_data_type_chksum
         endif
 
         ! get upward LW flux:  for sea ice covered area
-        fldname = 'mean_up_lw_flx'
+        fldname = 'mean_up_lw_flx_ice'
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then
@@ -1346,7 +1346,7 @@ end subroutine atmos_data_type_chksum
         endif
 
         ! get latent heat flux:  for sea ice covered area
-        fldname = 'mean_laten_heat_flx'
+        fldname = 'mean_laten_heat_flx_atm_into_ice'
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then
@@ -1364,7 +1364,7 @@ end subroutine atmos_data_type_chksum
         endif
 
         ! get sensible heat flux:  for sea ice covered area
-        fldname = 'mean_sensi_heat_flx'
+        fldname = 'mean_sensi_heat_flx_atm_into_ice'
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then
@@ -1382,7 +1382,7 @@ end subroutine atmos_data_type_chksum
         endif
 
         ! get zonal compt of momentum flux:  for sea ice covered area
-        fldname = 'mean_zonal_moment_flx'
+        fldname = 'stress_on_air_ice_merid'
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then
@@ -1400,7 +1400,7 @@ end subroutine atmos_data_type_chksum
         endif
 
         ! get meridional compt of momentum flux:  for sea ice covered area
-        fldname = 'mean_merid_moment_flx'
+        fldname = 'stress_on_air_ice_merid'
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then
@@ -1518,7 +1518,7 @@ end subroutine atmos_data_type_chksum
 
     ! set cpl fields to export Data
     ! MEAN Zonal compt of momentum flux (N/m**2)
-    idx = queryfieldlist(exportFieldsList,'mean_zonal_moment_flx')
+    idx = queryfieldlist(exportFieldsList,'mean_zonal_moment_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1530,7 +1530,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! MEAN Merid compt of momentum flux (N/m**2)
-    idx = queryfieldlist(exportFieldsList,'mean_merid_moment_flx')
+    idx = queryfieldlist(exportFieldsList,'mean_merid_moment_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1542,7 +1542,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! MEAN Sensible heat flux (W/m**2)
-    idx = queryfieldlist(exportFieldsList,'mean_sensi_heat_flx')
+    idx = queryfieldlist(exportFieldsList,'mean_sensi_heat_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1554,7 +1554,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! MEAN Latent heat flux (W/m**2)
-    idx = queryfieldlist(exportFieldsList,'mean_laten_heat_flx')
+    idx = queryfieldlist(exportFieldsList,'mean_laten_heat_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1602,7 +1602,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! Instataneous Zonal compt of momentum flux (N/m**2)
-    idx = queryfieldlist(exportFieldsList,'inst_zonal_moment_flx')
+    idx = queryfieldlist(exportFieldsList,'inst_zonal_moment_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1614,7 +1614,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! Instataneous Merid compt of momentum flux (N/m**2)
-    idx = queryfieldlist(exportFieldsList,'inst_merid_moment_flx')
+    idx = queryfieldlist(exportFieldsList,'inst_merid_moment_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1626,7 +1626,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! Instataneous Sensible heat flux (W/m**2)
-    idx = queryfieldlist(exportFieldsList,'inst_sensi_heat_flx')
+    idx = queryfieldlist(exportFieldsList,'inst_sensi_heat_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1638,7 +1638,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! Instataneous Latent heat flux (W/m**2)
-    idx = queryfieldlist(exportFieldsList,'inst_laten_heat_flx')
+    idx = queryfieldlist(exportFieldsList,'inst_laten_heat_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec

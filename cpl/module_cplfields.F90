@@ -38,17 +38,17 @@ module module_cplfields
        "vegetation_type                          ", &
        "inst_vegetation_area_frac                ", &
        "inst_surface_roughness                   ", &
-       "mean_zonal_moment_flx                    ", &
-       "mean_merid_moment_flx                    ", &
-       "mean_sensi_heat_flx                      ", &
-       "mean_laten_heat_flx                      ", &
-       "mean_down_lw_flx                         ", &
-       "mean_down_sw_flx                         ", &
-       "mean_prec_rate                           ", &
-       "inst_zonal_moment_flx                    ", &
-       "inst_merid_moment_flx                    ", &
-       "inst_sensi_heat_flx                      ", &
-       "inst_laten_heat_flx                      ", &
+       "mean_zonal_moment_flx_atm                ", &  !modified
+       "mean_merid_moment_flx_atm                ", &  !modified
+       "mean_sensi_heat_flx_atm                  ", &  !modified
+       "mean_laten_heat_flx_atm                  ", &  !modified
+       "mean_down_lw_flx                         ", &  
+       "mean_down_sw_flx                         ", &  
+       "mean_prec_rate                           ", &  
+       "inst_zonal_moment_flx_atm                ", &  !modified
+       "inst_merid_moment_flx_atm                ", &  !modified
+       "inst_sensi_heat_flx_atm                  ", &  !modified
+       "inst_laten_heat_flx_atm                  ", &  !modified
        "inst_down_lw_flx                         ", &
        "inst_down_sw_flx                         ", &
        "inst_temp_height2m                       ", &
@@ -143,19 +143,19 @@ module module_cplfields
   character(len=*), public, parameter :: importFieldsList(NimportFields) = (/ &
        "inst_tracer_mass_frac                  ", &
        "land_mask                              ", &
-       "surface_temperature                    ", &
+       "sea_ice_temperature                    ", & !modified
        "sea_surface_temperature                ", &
        "ice_fraction                           ", &
 !      "inst_ice_ir_dif_albedo                 ", &
 !      "inst_ice_ir_dir_albedo                 ", &
 !      "inst_ice_vis_dif_albedo                ", &
 !      "inst_ice_vis_dir_albedo                ", &
-       "mean_up_lw_flx                         ", &
-       "mean_laten_heat_flx                    ", &
-       "mean_sensi_heat_flx                    ", &
+       "mean_up_lw_flx_ice                     ", &
+       "mean_laten_heat_flx_atm_into_ice       ", & !modified
+       "mean_sensi_heat_flx_atm_into_ice       ", & !modified
 !      "mean_evap_rate                         ", &
-       "mean_zonal_moment_flx                  ", &
-       "mean_merid_moment_flx                  ", &
+       "stress_on_air_ice_zonal                ", & !modified
+       "stress_on_air_ice_merid                ", & !modified
        "mean_ice_volume                        ", &
        "mean_snow_volume                       "  &
   /)
