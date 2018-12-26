@@ -516,7 +516,9 @@ module module_physics_driver
 
 ! --- test point in lat/lon space (radians):
 !     real(kind=kind_phys),parameter :: testp(2) = (/ -1.161, 2.219 /) ! -66, 128
-      real(kind=kind_phys),parameter :: testp(2) = (/ -1.141, 1.839 /) ! -65.39, 105.37
+!     real(kind=kind_phys),parameter :: testp(2) = (/ -1.141, 1.839 /) ! -65.39, 105.37
+!      real(kind=kind_phys),parameter :: testp(2) = (/ -1.165, 3.752 /) ! 32,32
+       real(kind=kind_phys),parameter :: testp(2) = (/ -1.143, 3.752 /) ! 31,31
 
       real(kind=kind_phys), dimension(size(Grid%xlon,1))  ::            &
              zorl_ocn,   zorl_lnd,   zorl_ice,		&
@@ -953,6 +955,9 @@ module module_physics_driver
           tsea_cice(i)   = Sfcprop%tsfco(i)
           fice_cice(i)   = Sfcprop%fice(i)
           hice_cice(i)   = Sfcprop%hice(i)
+
+          if (abs(grid%xlat(i)-testp(1))+abs(grid%xlon(i)-testp(2))<1.e-2) &
+            write(*,'(a,i2,4f8.2)')'pnt0 ice=',islmsk_cice(i),Sfcprop%tisfc(i),Sfcprop%tsfco(i),Sfcprop%fice(i),Sfcprop%hice(i)
         enddo
       endif
 
@@ -1240,8 +1245,6 @@ module module_physics_driver
 !  --- ...  surface exchange coefficients
 !
 !     if (lprnt) write(0,*)' tsfco=',Sfcprop%tsfco(ipr),' tsurf=',tsurf(ipr),iter
-
-
         call sfc_diff_ocean (im,Statein%pgr, Statein%ugrs, Statein%vgrs,  &
                        Statein%tgrs, Statein%qgrs, Diag%zlvl,             &
                        snowd_ocn, tsfc_ocn,  zorl_ocn, cd_ocn,            &
@@ -1456,6 +1459,8 @@ module module_physics_driver
 !  --- ...  lu: update flag_iter and flag_guess
 
         do i=1,im
+          if (abs(grid%xlat(i)-testp(1))+abs(grid%xlon(i)-testp(2))<1.e-2) &
+            write(*,'(a,i2,4f8.2)')'pnt1 ice=',islmsk_cice(i),Sfcprop%tisfc(i),Sfcprop%tsfco(i),Sfcprop%fice(i),Sfcprop%hice(i)
           flag_iter(i)  = .false.
           flag_guess(i) = .false.
 
@@ -1574,6 +1579,8 @@ module module_physics_driver
            Sfcprop%tsfco(i) = tsfc_ocn(i)
            Sfcprop%tisfc(i) = tsfc_ice(i)
 
+           if (abs(grid%xlat(i)-testp(1))+abs(grid%xlon(i)-testp(2))<1.e-2) &
+            write(*,'(a,i2,8f8.2)')'pnt2 ice=',islmsk_cice(i),Sfcprop%tisfc(i),Sfcprop%tsfco(i),Sfcprop%fice(i),Sfcprop%hice(i),tsfc_ocn(i),Sfcprop%tsfc(i),Sfcprop%ocnfrac(i)
 !        if (abs(grid%xlat(i)-testp(1)) +					&
 !            abs(grid%xlon(i)-testp(2))<1.e-2)					&
 !          print 94,'after comp3    slmsk,dryf,fice=',islmsk(i),		&
@@ -2084,6 +2091,8 @@ module module_physics_driver
 
           Coupling%dtsfc_cpl (i) = Coupling%dtsfc_cpl(i) + Coupling%dtsfci_cpl(i) * dtf
           Coupling%dqsfc_cpl (i) = Coupling%dqsfc_cpl(i) + Coupling%dqsfci_cpl(i) * dtf
+          if (abs(grid%xlat(i)-testp(1))+abs(grid%xlon(i)-testp(2))<1.e-2) &
+            write(*,'(a,i2,4f8.2)')'pnt3 ice=',islmsk_cice(i),Sfcprop%tisfc(i),Sfcprop%tsfco(i),Sfcprop%fice(i),Sfcprop%hice(i),Coupling%dtsfc_cpl(i),Coupling%dqsfc_cpl(i)
          endif
         enddo
       endif
