@@ -104,6 +104,12 @@
           tem     = 1.0 / rho(i)
           hflx(i) = dtsfc(i) * tem * cpinv
           evap(i) = dqsfc(i) * tem * hvapi
+        else
+          qsurf(i) = 0.
+          cmm(i) = 0.
+          chh(i) = 0.
+          hflx(i) = 0.
+          evap(i) = 0.
         endif
       enddo
  

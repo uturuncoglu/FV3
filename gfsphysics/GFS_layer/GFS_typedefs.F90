@@ -1370,8 +1370,8 @@ module GFS_typedefs
       Coupling%slimskin_cpl = clear_val
       Coupling%dusfcin_cpl  = clear_val
       Coupling%dvsfcin_cpl  = clear_val
-      Coupling%dtsfcin_cpl  = clear_val
-      Coupling%dqsfcin_cpl  = clear_val
+      Coupling%dtsfcin_cpl  = huge   !clear_val
+      Coupling%dqsfcin_cpl  = huge   !clear_val
       Coupling%ulwsfcin_cpl = clear_val
       Coupling%tseain_cpl   = clear_val
       Coupling%tisfcin_cpl  = clear_val
@@ -1399,8 +1399,8 @@ module GFS_typedefs
 
       Coupling%dusfc_cpl    = clear_val
       Coupling%dvsfc_cpl    = clear_val
-      Coupling%dtsfc_cpl    = clear_val
-      Coupling%dqsfc_cpl    = clear_val
+      Coupling%dtsfc_cpl    = huge   !clear_val
+      Coupling%dqsfc_cpl    = huge   !clear_val
       Coupling%dlwsfc_cpl   = clear_val
       Coupling%dswsfc_cpl   = clear_val
       Coupling%dnirbm_cpl   = clear_val

@@ -100,6 +100,7 @@ use FV3GFS_io_mod,      only: FV3GFS_restart_read, FV3GFS_restart_write, &
                               FV3GFS_diag_register, FV3GFS_diag_output,  &
                               DIAG_SIZE
 use fv_iau_mod, only: iau_external_data_type,getiauforcing,iau_initialize
+use mdul_sfc_sice,     only: cimin
 
 !-----------------------------------------------------------------------
 
@@ -1314,12 +1315,10 @@ end subroutine atmos_data_type_chksum
               IPD_Data(nb)%Coupling%ficein_cpl(ix) = 0.
               IPD_Data(nb)%Coupling%slimskin_cpl(ix) = 0.
 !if it is ocean or ice get sst from mediator
-              if (IPD_Data(nb)%Sfcprop%ocnfrac(ix) > 0.) then
-                if( datar8(i,j) > 0. .and. IPD_Data(nb)%Sfcprop%ocnfrac(ix) > 0. ) then
+              if (IPD_Data(nb)%Sfcprop%ocnfrac(ix) > 0. .and. datar8(i,j) > cimin) then
                   IPD_Data(nb)%Coupling%ficein_cpl(ix) = datar8(i,j)
                   IPD_Data(nb)%Sfcprop%slmsk(ix) = 2.
                   IPD_Data(nb)%Coupling%slimskin_cpl(ix) = 4.
-                endif
               endif
             enddo
             enddo
@@ -1463,7 +1462,7 @@ end subroutine atmos_data_type_chksum
 !if it is ocean or ice get sst from mediator
         if (IPD_Data(nb)%Sfcprop%ocnfrac(ix) > 0.) then
             IPD_Data(nb)%Sfcprop%tisfc(ix) = IPD_Data(nb)%Coupling%tisfcin_cpl(ix)
-            if( IPD_Data(nb)%Coupling%ficein_cpl(ix) > 0. ) then
+            if( IPD_Data(nb)%Coupling%ficein_cpl(ix) > cimin ) then
               IPD_Data(nb)%Sfcprop%fice(ix)  = IPD_Data(nb)%Coupling%ficein_cpl(ix)
               IPD_Data(nb)%Sfcprop%hice(ix)  = IPD_Data(nb)%Coupling%hicein_cpl(ix)
               IPD_Data(nb)%Sfcprop%snowd(ix) = IPD_Data(nb)%Coupling%hsnoin_cpl(ix)
