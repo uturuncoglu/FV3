@@ -237,7 +237,7 @@ contains
     type(fv_flags_type), intent(INOUT) :: flagstruct
     type(fv_nest_type),  intent(INOUT) :: neststruct
     type(domain2d),      intent(INOUT) :: domain
-    type(fv_atmos_type), intent(INOUT) :: parent_grid
+    type(fv_atmos_type), pointer, intent(INOUT) :: parent_grid
     type(fv_diag_type),  intent(IN)    :: idiag
 
 ! Local Arrays
@@ -523,8 +523,10 @@ contains
   last_step = .false.
   mdt = bdt / real(k_split)
 
+  ! rsd - moved out of loop to satisfy debug checks
+  allocate ( dtdt_m(is:ie,js:je,npz) )
   if ( idiag%id_mdt > 0 .and. (.not. do_adiabatic_init) ) then
-       allocate ( dtdt_m(is:ie,js:je,npz) )
+
 !$OMP parallel do default(none) shared(is,ie,js,je,npz,dtdt_m)
        do k=1,npz
           do j=js,je
