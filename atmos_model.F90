@@ -1269,7 +1269,11 @@ end subroutine atmos_data_type_chksum
 !        endif
 
         ! get sea ice surface temperature 
+#ifdef CMEPS
+        fldname = 'sea_ice_temperature'
+#else
         fldname = 'sea_ice_surface_temperature'
+#endif
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then
@@ -1350,7 +1354,11 @@ end subroutine atmos_data_type_chksum
         endif
 
         ! get latent heat flux:  for sea ice covered area
+#ifdef CMEPS
+        fldname = 'mean_laten_heat_flx_atm'
+#else
         fldname = 'mean_laten_heat_flx'
+#endif
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then
@@ -1368,7 +1376,11 @@ end subroutine atmos_data_type_chksum
         endif
 
         ! get sensible heat flux:  for sea ice covered area
+#ifdef CMEPS
+        fldname = 'mean_sensi_heat_flx_atm'
+#else
         fldname = 'mean_sensi_heat_flx'
+#endif
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then
@@ -1386,7 +1398,11 @@ end subroutine atmos_data_type_chksum
         endif
 
         ! get zonal compt of momentum flux:  for sea ice covered area
+#ifdef CMEPS
+        fldname = 'mean_zonal_moment_flx_atm'
+#else
         fldname = 'mean_zonal_moment_flx'
+#endif
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then
@@ -1404,7 +1420,11 @@ end subroutine atmos_data_type_chksum
         endif
 
         ! get meridional compt of momentum flux:  for sea ice covered area
+#ifdef CMEPS
+        fldname = 'mean_merid_moment_flx_atm'
+#else
         fldname = 'mean_merid_moment_flx'
+#endif
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then
@@ -1556,7 +1576,11 @@ end subroutine atmos_data_type_chksum
 
     if (IPD_Control%cplflx) then
     ! MEAN Zonal compt of momentum flux (N/m**2)
+#ifdef CMEPS
+    idx = queryfieldlist(exportFieldsList,'mean_zonal_moment_flx_atm')
+#else
     idx = queryfieldlist(exportFieldsList,'mean_zonal_moment_flx')
+#endif
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1568,7 +1592,11 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! MEAN Merid compt of momentum flux (N/m**2)
+#ifdef CMEPS
+    idx = queryfieldlist(exportFieldsList,'mean_merid_moment_flx_atm')
+#else
     idx = queryfieldlist(exportFieldsList,'mean_merid_moment_flx')
+#endif
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1580,7 +1608,11 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! MEAN Sensible heat flux (W/m**2)
+#ifdef CMEPS
+    idx = queryfieldlist(exportFieldsList,'mean_sensi_heat_flx_atm')
+#else
     idx = queryfieldlist(exportFieldsList,'mean_sensi_heat_flx')
+#endif
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1592,7 +1624,11 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! MEAN Latent heat flux (W/m**2)
+#ifdef CMEPS
+    idx = queryfieldlist(exportFieldsList,'mean_laten_heat_flx_atm')
+#else
     idx = queryfieldlist(exportFieldsList,'mean_laten_heat_flx')
+#endif
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1640,7 +1676,11 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! Instataneous Zonal compt of momentum flux (N/m**2)
+#ifdef CMEPS
+    idx = queryfieldlist(exportFieldsList,'inst_zonal_moment_flx_atm')
+#else
     idx = queryfieldlist(exportFieldsList,'inst_zonal_moment_flx')
+#endif
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1652,7 +1692,11 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! Instataneous Merid compt of momentum flux (N/m**2)
+#ifdef CMEPS
+    idx = queryfieldlist(exportFieldsList,'inst_merid_moment_flx_atm')
+#else
     idx = queryfieldlist(exportFieldsList,'inst_merid_moment_flx')
+#endif
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1664,7 +1708,11 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! Instataneous Sensible heat flux (W/m**2)
+#ifdef CMEPS
+    idx = queryfieldlist(exportFieldsList,'inst_sensi_heat_flx_atm')
+#else
     idx = queryfieldlist(exportFieldsList,'inst_sensi_heat_flx')
+#endif
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1676,7 +1724,11 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! Instataneous Latent heat flux (W/m**2)
+#ifdef CMEPS
+    idx = queryfieldlist(exportFieldsList,'inst_laten_heat_flx_atm')
+#else
     idx = queryfieldlist(exportFieldsList,'inst_laten_heat_flx')
+#endif
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1772,7 +1824,11 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! MEAN NET long wave radiation flux (W/m**2)
+#ifdef CMEPS
+    idx = queryfieldlist(exportFieldsList,'mean_net_lw_flx_atm')
+#else
     idx = queryfieldlist(exportFieldsList,'mean_net_lw_flx')
+#endif
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1796,7 +1852,11 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! Instataneous NET long wave radiation flux (W/m**2)
+#ifdef CMEPS
+    idx = queryfieldlist(exportFieldsList,'inst_net_lw_flx_atm')
+#else
     idx = queryfieldlist(exportFieldsList,'inst_net_lw_flx')
+#endif
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec

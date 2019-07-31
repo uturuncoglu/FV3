@@ -38,17 +38,31 @@ module module_cplfields
        "vegetation_type                          ", &
        "inst_vegetation_area_frac                ", &
        "inst_surface_roughness                   ", &
+#ifdef CMEPS
+       "mean_zonal_moment_flx_atm                ", &
+       "mean_merid_moment_flx_atm                ", &
+       "mean_sensi_heat_flx_atm                  ", &
+       "mean_laten_heat_flx_atm                  ", &
+#else
        "mean_zonal_moment_flx                    ", &
        "mean_merid_moment_flx                    ", &
        "mean_sensi_heat_flx                      ", &
        "mean_laten_heat_flx                      ", &
+#endif
        "mean_down_lw_flx                         ", &
        "mean_down_sw_flx                         ", &
        "mean_prec_rate                           ", &
+#ifdef CMEPS
+       "inst_zonal_moment_flx_atm                ", &
+       "inst_merid_moment_flx_atm                ", &
+       "inst_sensi_heat_flx_atm                  ", &
+       "inst_laten_heat_flx_atm                  ", &
+#else
        "inst_zonal_moment_flx                    ", &
        "inst_merid_moment_flx                    ", &
        "inst_sensi_heat_flx                      ", &
        "inst_laten_heat_flx                      ", &
+#endif
        "inst_down_lw_flx                         ", &
        "inst_down_sw_flx                         ", &
        "inst_temp_height2m                       ", &
@@ -58,9 +72,17 @@ module module_cplfields
        "inst_temp_height_surface                 ", &
        "inst_pres_height_surface                 ", &
        "inst_surface_height                      ", &
+#ifdef CMEPS
+       "mean_net_lw_flx_atm                      ", &
+#else
        "mean_net_lw_flx                          ", &
+#endif
        "mean_net_sw_flx                          ", &
+#ifdef CMEPS
+       "inst_net_lw_flx_atm                      ", &
+#else
        "inst_net_lw_flx                          ", &
+#endif
        "inst_net_sw_flx                          ", &
        "mean_down_sw_ir_dir_flx                  ", &
        "mean_down_sw_ir_dif_flx                  ", &
@@ -143,7 +165,11 @@ module module_cplfields
   character(len=*), public, parameter :: importFieldsList(NimportFields) = (/ &
        "inst_tracer_mass_frac                  ", &
        "land_mask                              ", &
+#ifdef CMEPS
+       "sea_ice_temperature                    ", &
+#else
        "sea_ice_surface_temperature            ", &
+#endif
        "sea_surface_temperature                ", &
        "ice_fraction                           ", &
 !      "inst_ice_ir_dif_albedo                 ", &
@@ -151,11 +177,21 @@ module module_cplfields
 !      "inst_ice_vis_dif_albedo                ", &
 !      "inst_ice_vis_dir_albedo                ", &
        "mean_up_lw_flx                         ", &
+#ifdef CMEPS
+       "mean_laten_heat_flx_atm                ", &
+       "mean_sensi_heat_flx_atm                ", &
+#else
        "mean_laten_heat_flx                    ", &
        "mean_sensi_heat_flx                    ", &
+#endif
 !      "mean_evap_rate                         ", &
+#ifdef CMEPS
+       "mean_zonal_moment_flx_atm              ", &
+       "mean_merid_moment_flx_atm              ", &
+#else
        "mean_zonal_moment_flx                  ", &
        "mean_merid_moment_flx                  ", &
+#endif
        "mean_ice_volume                        ", &
        "mean_snow_volume                       "  &
   /)
