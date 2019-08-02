@@ -177,21 +177,10 @@ module module_cplfields
 !      "inst_ice_vis_dif_albedo                ", &
 !      "inst_ice_vis_dir_albedo                ", &
        "mean_up_lw_flx                         ", &
-#ifdef CMEPS
-       "mean_laten_heat_flx_atm                ", &
-       "mean_sensi_heat_flx_atm                ", &
-#else
        "mean_laten_heat_flx                    ", &
        "mean_sensi_heat_flx                    ", &
-#endif
-!      "mean_evap_rate                         ", &
-#ifdef CMEPS
-       "mean_zonal_moment_flx_atm              ", &
-       "mean_merid_moment_flx_atm              ", &
-#else
        "mean_zonal_moment_flx                  ", &
        "mean_merid_moment_flx                  ", &
-#endif
        "mean_ice_volume                        ", &
        "mean_snow_volume                       "  &
   /)

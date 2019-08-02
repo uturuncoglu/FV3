@@ -1354,11 +1354,7 @@ end subroutine atmos_data_type_chksum
         endif
 
         ! get latent heat flux:  for sea ice covered area
-#ifdef CMEPS
-        fldname = 'mean_laten_heat_flx_atm'
-#else
         fldname = 'mean_laten_heat_flx'
-#endif
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then
@@ -1376,11 +1372,7 @@ end subroutine atmos_data_type_chksum
         endif
 
         ! get sensible heat flux:  for sea ice covered area
-#ifdef CMEPS
-        fldname = 'mean_sensi_heat_flx_atm'
-#else
         fldname = 'mean_sensi_heat_flx'
-#endif
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then
@@ -1398,11 +1390,7 @@ end subroutine atmos_data_type_chksum
         endif
 
         ! get zonal compt of momentum flux:  for sea ice covered area
-#ifdef CMEPS
-        fldname = 'mean_zonal_moment_flx_atm'
-#else
         fldname = 'mean_zonal_moment_flx'
-#endif
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then
@@ -1420,11 +1408,7 @@ end subroutine atmos_data_type_chksum
         endif
 
         ! get meridional compt of momentum flux:  for sea ice covered area
-#ifdef CMEPS
-        fldname = 'mean_merid_moment_flx_atm'
-#else
         fldname = 'mean_merid_moment_flx'
-#endif
         findex = QueryFieldList(ImportFieldsList,fldname)
         if (importFieldsValid(findex) .and. datar8(isc,jsc) > -99999.0) then
           if (trim(impfield_name) == trim(fldname) .and. found) then

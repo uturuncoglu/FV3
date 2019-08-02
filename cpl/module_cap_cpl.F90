@@ -371,11 +371,19 @@ module module_cap_cpl
         file=__FILE__)) &
         return  ! bail out
 
+#ifdef CMEPS
+      call ESMF_FieldWrite(outField, fileName, variableName=fieldName, timeslice=timeslice, overwrite=.true., rc=rc)
+      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+        line=__LINE__, &
+        file=__FILE__)) &
+        return  ! bail out
+#else
       call ESMF_FieldWrite(outField, fileName, variableName=fieldName, timeslice=timeslice, rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, &
         file=__FILE__)) &
         return  ! bail out
+#endif
 
       call ESMF_FieldRegridRelease(routehandle=rh, rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
