@@ -841,6 +841,7 @@ module fv3gfs_cap_mod
             if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
               line=__LINE__, file=__FILE__)) return  ! bail out
           end if
+          call ESMF_LogWrite(subname//'To_fv3 '//trim(ImportFieldsList(i)), ESMF_LOGMSG_INFO)
         end do
       
         ! exportable fields:
@@ -857,6 +858,7 @@ module fv3gfs_cap_mod
             if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
               line=__LINE__, file=__FILE__)) return  ! bail out
           end if
+          call ESMF_LogWrite(subname//'Fr_fv3 '//trim(exportFieldsList(i)), ESMF_LOGMSG_INFO)
         end do
       
       endif

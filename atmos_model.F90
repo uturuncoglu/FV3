@@ -1550,7 +1550,7 @@ end subroutine atmos_data_type_chksum
 
     if (IPD_Control%cplflx) then
     ! MEAN Zonal compt of momentum flux (N/m**2)
-    idx = queryfieldlist(exportFieldsList,'mean_zonal_moment_flx')
+    idx = queryfieldlist(exportFieldsList,'mean_zonal_moment_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1562,7 +1562,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! MEAN Merid compt of momentum flux (N/m**2)
-    idx = queryfieldlist(exportFieldsList,'mean_merid_moment_flx')
+    idx = queryfieldlist(exportFieldsList,'mean_merid_moment_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1574,7 +1574,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! MEAN Sensible heat flux (W/m**2)
-    idx = queryfieldlist(exportFieldsList,'mean_sensi_heat_flx')
+    idx = queryfieldlist(exportFieldsList,'mean_sensi_heat_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1586,7 +1586,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! MEAN Latent heat flux (W/m**2)
-    idx = queryfieldlist(exportFieldsList,'mean_laten_heat_flx')
+    idx = queryfieldlist(exportFieldsList,'mean_laten_heat_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1634,7 +1634,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! Instataneous Zonal compt of momentum flux (N/m**2)
-    idx = queryfieldlist(exportFieldsList,'inst_zonal_moment_flx')
+    idx = queryfieldlist(exportFieldsList,'inst_zonal_moment_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1646,7 +1646,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! Instataneous Merid compt of momentum flux (N/m**2)
-    idx = queryfieldlist(exportFieldsList,'inst_merid_moment_flx')
+    idx = queryfieldlist(exportFieldsList,'inst_merid_moment_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1658,7 +1658,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! Instataneous Sensible heat flux (W/m**2)
-    idx = queryfieldlist(exportFieldsList,'inst_sensi_heat_flx')
+    idx = queryfieldlist(exportFieldsList,'inst_sensi_heat_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1670,7 +1670,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! Instataneous Latent heat flux (W/m**2)
-    idx = queryfieldlist(exportFieldsList,'inst_laten_heat_flx')
+    idx = queryfieldlist(exportFieldsList,'inst_laten_heat_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1766,7 +1766,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! MEAN NET long wave radiation flux (W/m**2)
-    idx = queryfieldlist(exportFieldsList,'mean_net_lw_flx')
+    idx = queryfieldlist(exportFieldsList,'mean_net_lw_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec
@@ -1790,7 +1790,7 @@ end subroutine atmos_data_type_chksum
     endif
 
     ! Instataneous NET long wave radiation flux (W/m**2)
-    idx = queryfieldlist(exportFieldsList,'inst_net_lw_flx')
+    idx = queryfieldlist(exportFieldsList,'inst_net_lw_flx_atm')
     if (idx > 0 ) then
       do j=jsc,jec
         do i=isc,iec

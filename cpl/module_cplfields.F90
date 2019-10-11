@@ -38,17 +38,17 @@ module module_cplfields
        "vegetation_type                          ", &
        "inst_vegetation_area_frac                ", &
        "inst_surface_roughness                   ", &
-       "mean_zonal_moment_flx                    ", &
-       "mean_merid_moment_flx                    ", &
-       "mean_sensi_heat_flx                      ", &
-       "mean_laten_heat_flx                      ", &
+       "mean_zonal_moment_flx_atm                ", &
+       "mean_merid_moment_flx_atm                ", &
+       "mean_sensi_heat_flx_atm                  ", &
+       "mean_laten_heat_flx_atm                  ", &
        "mean_down_lw_flx                         ", &
        "mean_down_sw_flx                         ", &
        "mean_prec_rate                           ", &
-       "inst_zonal_moment_flx                    ", &
-       "inst_merid_moment_flx                    ", &
-       "inst_sensi_heat_flx                      ", &
-       "inst_laten_heat_flx                      ", &
+       "inst_zonal_moment_flx_atm                ", &
+       "inst_merid_moment_flx_atm                ", &
+       "inst_sensi_heat_flx_atm                  ", &
+       "inst_laten_heat_flx_atm                  ", &
        "inst_down_lw_flx                         ", &
        "inst_down_sw_flx                         ", &
        "inst_temp_height2m                       ", &
@@ -58,9 +58,9 @@ module module_cplfields
        "inst_temp_height_surface                 ", &
        "inst_pres_height_surface                 ", &
        "inst_surface_height                      ", &
-       "mean_net_lw_flx                          ", &
+       "mean_net_lw_flx_atm                      ", &
        "mean_net_sw_flx                          ", &
-       "inst_net_lw_flx                          ", &
+       "inst_net_lw_flx_atm                      ", &
        "inst_net_sw_flx                          ", &
        "mean_down_sw_ir_dir_flx                  ", &
        "mean_down_sw_ir_dif_flx                  ", &

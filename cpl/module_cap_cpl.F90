@@ -198,6 +198,7 @@ module module_cap_cpl
           fptr=0._ESMF_KIND_R8 ! zero out the entire field
           ! -- save field
           fieldList(item) = field
+          call ESMF_LogWrite('fv3: realize connected field '//trim(fieldNames(item)), ESMF_LOGMSG_INFO)
         else
           ! remove a not connected Field from State
           call ESMF_StateRemove(state, (/trim(fieldNames(item))/), rc=rc)

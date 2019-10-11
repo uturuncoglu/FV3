@@ -119,8 +119,8 @@ module module_write_netcdf
     ncerr = nf90_set_fill(ncid, NF90_NOFILL, oldMode); NC_ERR_STOP(ncerr)
 
     ! define dimensions
-    ncerr = nf90_def_dim(ncid, "grid_xt", im, im_dimid); NC_ERR_STOP(ncerr)
-    ncerr = nf90_def_dim(ncid, "grid_yt", jm, jm_dimid); NC_ERR_STOP(ncerr)
+    ncerr = nf90_def_dim(ncid, "ngrid_xt", im, im_dimid); NC_ERR_STOP(ncerr)
+    ncerr = nf90_def_dim(ncid, "ngrid_yt", jm, jm_dimid); NC_ERR_STOP(ncerr)
 
     ! define coordinate variables
     ncerr = nf90_def_var(ncid, "grid_xt", NF90_DOUBLE, (/im_dimid,jm_dimid/), im_varid); NC_ERR_STOP(ncerr)
